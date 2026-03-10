@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <title>Reactor Control Room</title>
 <link rel="stylesheet" href="style.css">
@@ -7,7 +8,7 @@
 
 <body>
 
-<h1>⚛️ Reactor Control Room</h1>
+<h1>⚛️ Reactor Control Room Simulator</h1>
 
 <div class="dashboard">
 
@@ -38,53 +39,44 @@
 <div>Power Output: <span id="output">20</span> %</div>
 <div>Radiation Level: <span id="radiation">5</span> mSv</div>
 
+<div id="warningBox">System Stable</div>
+
 </div>
 
 </div>
+
 <button id="menuBtn">☰ Menu</button>
 
 <div id="menuPanel">
 
 <h2>Reactor Simulator Guide</h2>
 
-<p>
-This simulator demonstrates the basic working of a nuclear reactor system.
-</p>
+<p>This simulator demonstrates how a nuclear reactor system works.</p>
 
 <h3>Controls</h3>
 
-<p>
-Reactor Power – increases the energy produced by the reactor core.
-</p>
+<p>Reactor Power increases the energy produced by the reactor.</p>
 
-<p>
-Control Rods – inserting rods slows the nuclear reaction and reduces power.
-</p>
+<p>Control Rods reduce the nuclear reaction when inserted.</p>
 
-<p>
-SCRAM – emergency shutdown that inserts all control rods immediately.
-</p>
+<p>SCRAM immediately shuts down the reactor.</p>
 
 <h3>Meters</h3>
 
-<p>
-Temperature shows the heat level inside the reactor core.
-</p>
+<p>Temperature shows reactor heat.</p>
 
-<p>
-Pressure represents the steam pressure driving the turbine.
-</p>
+<p>Pressure represents steam pressure driving turbines.</p>
 
-<p>
-Radiation indicates radiation levels inside the reactor system.
-</p>
-
-<p>
-This simulator is for educational visualization of reactor systems.
-</p>
+<p>Radiation shows radiation level in the reactor.</p>
 
 </div>
+
+<audio id="alarmSound">
+<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
+</audio>
+
 <script src="script.js"></script>
 
 </body>
+
 </html>
