@@ -34,6 +34,13 @@ speed:Math.random()*2+1
 function updateReactor(){
 
 let p=power.value;
+  if(p < 10 && p > 0){
+
+warningBox.innerText="⚠️ REACTOR POWER TOO LOW!";
+warningBox.className="warning";
+alarm.play();
+
+}
 let r=rods.value;
 
 if(p>0){
