@@ -1,55 +1,35 @@
-const canvas = document.getElementById("sim");
-const ctx = canvas.getContext("2d");
+const power = document.getElementById("power");
+const rods = document.getElementById("rods");
 
-canvas.width = 800;
-canvas.height = 400;
+const temp = document.getElementById("temp");
+const pressure = document.getElementById("pressure");
+const output = document.getElementById("output");
 
-let turbineAngle = 0;
-let flowOffset = 0;
+power.addEventListener("input", updateReactor);
+rods.addEventListener("input", updateReactor);
 
-function drawSystem(){
+function updateReactor(){
 
-ctx.clearRect(0,0,canvas.width,canvas.height);
+let p = power.value;
+let r = rods.value;
 
-//// Reactor core
-ctx.fillStyle="orange";
-ctx.fillRect(150,150,80,80);
+output.innerText = p;
 
-//// coolant pipes
-ctx.strokeStyle="cyan";
-ctx.lineWidth=6;
-ctx.beginPath();
-ctx.moveTo(230,190);
-ctx.lineTo(500,190);
-ctx.stroke();
+temp.innerText = 300 + p*5 - r*2;
 
-//// moving coolant
-for(let i=0;i<10;i++){
-ctx.beginPath();
-ctx.arc(230 + i*30 + flowOffset,190,5,0,Math.PI*2);
-ctx.fillStyle="cyan";
-ctx.fill();
+pressure.innerText = 80 + p*2;
+
 }
 
-//// turbine
-ctx.save();
-ctx.translate(550,190);
-ctx.rotate(turbineAngle);
+document.getElementById("scram").onclick = function(){
 
-for(let i=0;i<4;i++){
-ctx.rotate(Math.PI/2);
-ctx.fillStyle="silver";
-ctx.fillRect(0,0,60,10);
+power.value = 0;
+rods.value = 100;
+
+updateReactor();
+
+alert("SCRAM ACTIVATED - REACTOR SHUTDOWN");
+
 }
 
-ctx.restore();
-
-flowOffset +=2;
-if(flowOffset>30) flowOffset=0;
-
-turbineAngle +=0.05;
-
-requestAnimationFrame(drawSystem);
-}
-
-drawSystem();
+updateReactor();
