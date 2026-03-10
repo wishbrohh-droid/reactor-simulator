@@ -12,6 +12,9 @@ const pressure = document.getElementById("pressure");
 const output = document.getElementById("output");
 const radiation = document.getElementById("radiation");
 
+const warningBox = document.getElementById("warningBox");
+const alarm = document.getElementById("alarmSound");
+
 let turbineAngle = 0;
 let flowOffset = 0;
 
@@ -31,13 +34,45 @@ function updateReactor(){
 let p = power.value;
 let r = rods.value;
 
+let t = 300 + p*5 - r*2;
+let pr = 80 + p*2;
+let rad = Math.floor(5 + p*0.8 - r*0.5);
+
 output.innerText = p;
+temp.innerText = t;
+pressure.innerText = pr;
+radiation.innerText = rad;
 
-temp.innerText = 300 + p*5 - r*2;
+if(pr > 200){
 
-pressure.innerText = 80 + p*2;
+warningBox.innerText="⚠️ PRESSURE TOO HIGH!";
+warningBox.style.borderColor="red";
+alarm.play();
 
-radiation.innerText = Math.floor(5 + p*0.8 - r*0.5);
+}
+
+else if(pr < 50){
+
+warningBox.innerText="⚠️ PRESSURE TOO LOW!";
+warningBox.style.borderColor="orange";
+alarm.play();
+
+}
+
+else if(t > 800){
+
+warningBox.innerText="🔥 CORE OVERHEATING!";
+warningBox.style.borderColor="red";
+alarm.play();
+
+}
+
+else{
+
+warningBox.innerText="System Stable";
+warningBox.style.borderColor="lime";
+
+}
 
 }
 
@@ -55,65 +90,71 @@ alert("SCRAM ACTIVATED - REACTOR SHUTDOWN");
 power.addEventListener("input",updateReactor);
 rods.addEventListener("input",updateReactor);
 
+const menuBtn=document.getElementById("menuBtn");
+const menuPanel=document.getElementById("menuPanel");
+
+menuBtn.onclick=function(){
+menuPanel.classList.toggle("open");
+}
+
 function drawSystem(){
 
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-//// reactor core
 ctx.fillStyle="orange";
 ctx.fillRect(150,150,80,80);
 
-//// coolant pipe
 ctx.strokeStyle="cyan";
 ctx.lineWidth=6;
+
 ctx.beginPath();
 ctx.moveTo(230,190);
 ctx.lineTo(500,190);
 ctx.stroke();
 
-//// moving coolant
 for(let i=0;i<10;i++){
 
 ctx.beginPath();
-ctx.arc(230 + i*30 + flowOffset,190,5,0,Math.PI*2);
+ctx.arc(230+i*30+flowOffset,190,5,0,Math.PI*2);
 ctx.fillStyle="cyan";
 ctx.fill();
 
 }
 
-//// turbine
 ctx.save();
+
 ctx.translate(550,190);
 ctx.rotate(turbineAngle);
 
 for(let i=0;i<4;i++){
+
 ctx.rotate(Math.PI/2);
 ctx.fillStyle="silver";
 ctx.fillRect(0,0,60,10);
+
 }
 
 ctx.restore();
 
-//// steam particles
-steam.forEach(p => {
+steam.forEach(p=>{
 
 ctx.beginPath();
 ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
 ctx.fillStyle="rgba(200,200,200,0.5)";
 ctx.fill();
 
-p.y -= p.speed;
+p.y-=p.speed;
 
-if(p.y < 150){
-p.y = 300;
+if(p.y<150){
+p.y=300;
 }
 
 });
 
-flowOffset +=2;
+flowOffset+=2;
 if(flowOffset>30) flowOffset=0;
 
-turbineAngle +=0.05;
+turbineAngle+=0.05;
 
 requestAnimationFrame(drawSystem);
 
@@ -121,11 +162,3 @@ requestAnimationFrame(drawSystem);
 
 updateReactor();
 drawSystem();
-const menuBtn = document.getElementById("menuBtn");
-const menuPanel = document.getElementById("menuPanel");
-
-menuBtn.onclick = function(){
-
-menuPanel.classList.toggle("open");
-
-}
