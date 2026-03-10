@@ -43,37 +43,36 @@ temp.innerText = t;
 pressure.innerText = pr;
 radiation.innerText = rad;
 
-if(pr > 200){
+if(pr > 200){if(pr > 200){
 
-warningBox.innerText="⚠️ PRESSURE TOO HIGH!";
-warningBox.style.borderColor="red";
+warningBox.innerText = "⚠️ WARNING: PRESSURE TOO HIGH!";
+warningBox.className = "danger";
 alarm.play();
 
 }
 
 else if(pr < 50){
 
-warningBox.innerText="⚠️ PRESSURE TOO LOW!";
-warningBox.style.borderColor="orange";
+warningBox.innerText = "⚠️ WARNING: PRESSURE TOO LOW!";
+warningBox.className = "warning";
 alarm.play();
 
 }
 
 else if(t > 800){
 
-warningBox.innerText="🔥 CORE OVERHEATING!";
-warningBox.style.borderColor="red";
+warningBox.innerText = "🔥 DANGER: CORE OVERHEATING!";
+warningBox.className = "danger";
 alarm.play();
 
 }
 
 else{
 
-warningBox.innerText="System Stable";
-warningBox.style.borderColor="lime";
+warningBox.innerText = "⚛️ SYSTEM STATUS: STABLE";
+warningBox.className = "safe";
 
 }
-
 }
 
 document.getElementById("scram").onclick=function(){
