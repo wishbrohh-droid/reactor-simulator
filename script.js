@@ -121,3 +121,11 @@ requestAnimationFrame(drawSystem);
 
 updateReactor();
 drawSystem();
+const menuBtn = document.getElementById("menuBtn");
+const menuPanel = document.getElementById("menuPanel");
+
+menuBtn.onclick = function(){
+
+menuPanel.classList.toggle("open");
+
+}
