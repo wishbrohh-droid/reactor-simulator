@@ -1,28 +1,30 @@
-const canvas = document.getElementById("sim");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("sim");
+const ctx=canvas.getContext("2d");
 
-canvas.width = 800;
-canvas.height = 400;
+canvas.width=800;
+canvas.height=400;
 
-const power = document.getElementById("power");
-const rods = document.getElementById("rods");
+const power=document.getElementById("power");
+const rods=document.getElementById("rods");
 
-const temp = document.getElementById("temp");
-const pressure = document.getElementById("pressure");
-const output = document.getElementById("output");
-const radiation = document.getElementById("radiation");
+const temp=document.getElementById("temp");
+const pressure=document.getElementById("pressure");
+const output=document.getElementById("output");
+const radiation=document.getElementById("radiation");
 
-const warningBox = document.getElementById("warningBox");
-const alarm = document.getElementById("alarmSound");
+const warningBox=document.getElementById("warningBox");
 
-let turbineAngle = 0;
-let flowOffset = 0;
+const alarm=document.getElementById("alarmSound");
+const reactorHum=document.getElementById("reactorHum");
 
-let steam = [];
+let turbineAngle=0;
+let flowOffset=0;
+
+let steam=[];
 
 for(let i=0;i<40;i++){
 steam.push({
-x:400 + Math.random()*50,
+x:400+Math.random()*50,
 y:300,
 size:Math.random()*5+2,
 speed:Math.random()*2+1
@@ -31,48 +33,58 @@ speed:Math.random()*2+1
 
 function updateReactor(){
 
-let p = power.value;
-let r = rods.value;
+let p=power.value;
+let r=rods.value;
 
-let t = 300 + p*5 - r*2;
-let pr = 80 + p*2;
-let rad = Math.floor(5 + p*0.8 - r*0.5);
+if(p>0){
+reactorHum.play().catch(()=>{});
+}else{
+reactorHum.pause();
+}
 
-output.innerText = p;
-temp.innerText = t;
-pressure.innerText = pr;
-radiation.innerText = rad;
+let t=300+p*5-r*2;
+let pr=80+p*2;
+let rad=Math.floor(5+p*0.8-r*0.5);
 
-if(pr > 200){if(pr > 200){
+output.innerText=p;
+temp.innerText=t;
+pressure.innerText=pr;
+radiation.innerText=rad;
 
-warningBox.innerText = "⚠️ WARNING: PRESSURE TOO HIGH!";
-warningBox.className = "danger";
+alarm.pause();
+alarm.currentTime=0;
+
+if(pr>200){
+
+warningBox.innerText="⚠️ PRESSURE TOO HIGH!";
+warningBox.className="danger";
 alarm.play();
 
 }
 
-else if(pr < 50){
+else if(pr<50){
 
-warningBox.innerText = "⚠️ WARNING: PRESSURE TOO LOW!";
-warningBox.className = "warning";
+warningBox.innerText="⚠️ PRESSURE TOO LOW!";
+warningBox.className="warning";
 alarm.play();
 
 }
 
-else if(t > 800){
+else if(t>800){
 
-warningBox.innerText = "🔥 DANGER: CORE OVERHEATING!";
-warningBox.className = "danger";
+warningBox.innerText="🔥 CORE OVERHEATING!";
+warningBox.className="danger";
 alarm.play();
 
 }
 
 else{
 
-warningBox.innerText = "⚛️ SYSTEM STATUS: STABLE";
-warningBox.className = "safe";
+warningBox.innerText="⚛️ SYSTEM STATUS: STABLE";
+warningBox.className="safe";
 
 }
+
 }
 
 document.getElementById("scram").onclick=function(){
@@ -151,7 +163,7 @@ p.y=300;
 });
 
 flowOffset+=2;
-if(flowOffset>30) flowOffset=0;
+if(flowOffset>30)flowOffset=0;
 
 turbineAngle+=0.05;
 
