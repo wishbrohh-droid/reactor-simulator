@@ -1,24 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Nuclear Reactor Simulator</title>
+<title>Reactor Control Room</title>
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<h1>⚛️ Nuclear Reactor Simulator</h1>
+<h1>⚛️ Reactor Control Room</h1>
 
-<div class="panel">
+<div class="dashboard">
+
+<div class="reactor">
+<canvas id="sim"></canvas>
+</div>
+
+<div class="controls">
+
+<h3>Controls</h3>
 
 <label>Reactor Power</label>
 <input type="range" id="power" min="0" max="100" value="20">
 
-<div id="output">Power Output: 20%</div>
+<label>Control Rods</label>
+<input type="range" id="rods" min="0" max="100" value="50">
+
+<button id="scram">EMERGENCY SCRAM</button>
 
 </div>
 
-<canvas id="sim"></canvas>
+<div class="meters">
+
+<h3>Reactor Meters</h3>
+
+<div>Temperature: <span id="temp">300</span> °C</div>
+<div>Pressure: <span id="pressure">80</span> bar</div>
+<div>Power Output: <span id="output">20</span> %</div>
+
+</div>
+
+</div>
 
 <script src="script.js"></script>
 
