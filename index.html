@@ -1,78 +1,1760 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-<title>Reactor Control Room</title>
-<link rel="stylesheet" href="style.css">
-</head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NRCS-7 Nuclear Reactor Control System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap');
 
+:root {
+  --bg: #060a0f;
+  --panel: #0a1118;
+  --panel2: #0d1520;
+  --border: #1a3a5c;
+  --border2: #0f2540;
+  --cyan: #00e5ff;
+  --cyan2: #00b8d4;
+  --green: #00ff88;
+  --green2: #00c96e;
+  --amber: #ffb300;
+  --red: #ff1744;
+  --red2: #d50000;
+  --blue: #2979ff;
+  --purple: #aa00ff;
+  --text: #b0d4e8;
+  --text2: #6a8fa8;
+  --white: #e8f4ff;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Exo 2', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* SCANLINE OVERLAY */
+body::after {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events:none; z-index:999;
+}
+
+/* TOP BAR */
+.topbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 10;
+}
+
+.topbar-logo {
+  font-family: 'Orbitron', monospace;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--cyan);
+  letter-spacing: 4px;
+  text-shadow: 0 0 20px rgba(0,229,255,0.5);
+}
+
+.topbar-sub {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 2px;
+  margin-top: 2px;
+}
+
+.topbar-center {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.topbar-stat {
+  text-align: center;
+}
+
+.topbar-stat .label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text2);
+  letter-spacing: 2px;
+}
+
+.topbar-stat .val {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%,100% { opacity:1; }
+  50% { opacity:0.4; }
+}
+
+.clock {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--cyan2);
+}
+
+.info-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--cyan);
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  padding: 5px 12px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+}
+.info-btn:hover {
+  background: rgba(0,229,255,0.1);
+  border-color: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,229,255,0.2);
+}
+
+/* MAIN LAYOUT */
+.main {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  grid-template-rows: 1fr auto;
+  height: calc(100vh - 52px);
+  gap: 1px;
+  background: #050810;
+}
+
+/* PANELS */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  overflow: hidden;
+  position: relative;
+}
+
+.panel-header {
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-header h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.panel-header .ph-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 6px var(--cyan);
+}
+
+/* LEFT PANEL - CONTROLS */
+.left-panel { grid-row: 1; grid-column: 1; }
+.left-panel .controls { padding: 14px; }
+
+.control-group {
+  margin-bottom: 18px;
+}
+
+.control-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.control-label span {
+  color: var(--cyan);
+  font-size: 12px;
+}
+
+input[type=range] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 16px var(--cyan);
+}
+
+input[type=range].rod-slider::-webkit-slider-thumb {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+
+.slider-track {
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.slider-fill {
+  position: absolute;
+  height: 4px;
+  top: 50%; transform: translateY(-50%);
+  left: 0;
+  background: linear-gradient(90deg, var(--cyan2), var(--cyan));
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* BUTTONS */
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ctrl-btn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.ctrl-btn::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0;
+  width: 3px; height: 100%;
+  background: var(--cyan);
+}
+
+.ctrl-btn:hover {
+  background: rgba(0,229,255,0.08);
+  border-color: var(--cyan2);
+  color: var(--cyan);
+}
+
+.ctrl-btn.active {
+  background: rgba(0,255,136,0.1);
+  border-color: var(--green);
+  color: var(--green);
+}
+.ctrl-btn.active::before { background: var(--green); }
+
+.scram-btn {
+  padding: 14px;
+  background: rgba(255,23,68,0.1);
+  border: 2px solid var(--red);
+  color: var(--red);
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 14px;
+  width: 100%;
+  text-shadow: 0 0 10px rgba(255,23,68,0.5);
+  box-shadow: 0 0 10px rgba(255,23,68,0.2);
+  animation: scram-idle 3s infinite;
+}
+
+@keyframes scram-idle {
+  0%,100% { box-shadow: 0 0 10px rgba(255,23,68,0.2); }
+  50% { box-shadow: 0 0 20px rgba(255,23,68,0.4); }
+}
+
+.scram-btn:hover {
+  background: rgba(255,23,68,0.25);
+  box-shadow: 0 0 30px rgba(255,23,68,0.6);
+}
+
+/* CENTER PANEL - REACTOR VISUALIZATION */
+.center-panel {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.reactor-canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+canvas#reactorCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* WARNING BAR */
+.warning-bar {
+  padding: 10px 20px;
+  background: var(--panel2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+}
+
+.warning-bar.stable { color: var(--green); border-color: var(--green2); }
+.warning-bar.warning { color: var(--amber); border-color: var(--amber); }
+.warning-bar.danger { color: var(--red); border-color: var(--red); animation: blink-bar 0.5s infinite; }
+
+@keyframes blink-bar {
+  0%,100% { opacity:1; }
+  50% { opacity:0.3; }
+}
+
+.warning-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+.warning-messages {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.w-msg {
+  padding: 2px 8px;
+  border: 1px solid currentColor;
+  font-size: 9px;
+  opacity: 0.9;
+}
+
+/* RIGHT PANEL - METERS */
+.right-panel { grid-row: 1; grid-column: 3; }
+.meters { padding: 14px; }
+
+.meter-card {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.meter-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--cyan);
+}
+
+.meter-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text2);
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.meter-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cyan);
+  line-height: 1;
+}
+
+.meter-unit {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  margin-left: 4px;
+}
+
+.meter-bar-wrap {
+  height: 3px;
+  background: var(--border);
+  margin-top: 8px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.meter-bar {
+  height: 100%;
+  background: var(--cyan);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.meter-card.hot .meter-value { color: var(--red); }
+.meter-card.hot::before { background: var(--red); }
+.meter-card.hot .meter-bar { background: var(--red); }
+.meter-card.warm .meter-value { color: var(--amber); }
+.meter-card.warm::before { background: var(--amber); }
+.meter-card.warm .meter-bar { background: var(--amber); }
+.meter-card.ok .meter-value { color: var(--green); }
+.meter-card.ok::before { background: var(--green); }
+.meter-card.ok .meter-bar { background: var(--green); }
+
+/* SECONDARY INDICATORS */
+.indicators {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.ind-box {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  padding: 8px;
+  text-align: center;
+}
+
+.ind-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 8px;
+  color: var(--text2);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.ind-light {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  margin: 0 auto 4px;
+  background: var(--border);
+}
+
+.ind-light.on-green {
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+.ind-light.on-amber {
+  background: var(--amber);
+  box-shadow: 0 0 8px var(--amber);
+}
+.ind-light.on-red {
+  background: var(--red);
+  box-shadow: 0 0 8px var(--red);
+  animation: blink-light 0.5s infinite;
+}
+@keyframes blink-light {
+  0%,100%{opacity:1} 50%{opacity:0.2}
+}
+
+.ind-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  color: var(--text2);
+}
+
+/* BOTTOM BAR */
+.bottom-bar {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  background: var(--panel2);
+  border-top: 1px solid var(--border);
+  padding: 6px 20px;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+}
+
+.bb-item {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bb-item .bb-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 4px var(--green);
+}
+
+/* MELTDOWN OVERLAY */
+#meltdownOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(180,0,0,0.15);
+  z-index: 100;
+  pointer-events: none;
+  animation: meltdown-flash 0.4s infinite;
+}
+
+@keyframes meltdown-flash {
+  0%,100%{opacity:1} 50%{opacity:0.3}
+}
+
+#meltdownMsg {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%,-50%);
+  background: rgba(0,0,0,0.92);
+  border: 2px solid var(--red);
+  padding: 30px 50px;
+  text-align: center;
+  z-index: 200;
+  pointer-events: none;
+}
+
+#meltdownMsg h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--red);
+  letter-spacing: 6px;
+  text-shadow: 0 0 30px var(--red);
+  animation: blink-bar 0.3s infinite;
+}
+
+#meltdownMsg p {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--amber);
+  letter-spacing: 3px;
+  margin-top: 10px;
+}
+
+/* INFO PANEL (SLIDE-IN FROM BOTTOM) */
+#infoPanel {
+  position: fixed;
+  bottom: -100%;
+  left: 0; right: 0;
+  height: 65vh;
+  background: var(--panel);
+  border-top: 2px solid var(--cyan);
+  z-index: 300;
+  transition: bottom 0.4s cubic-bezier(0.4,0,0.2,1);
+  overflow-y: auto;
+}
+
+#infoPanel.open { bottom: 0; }
+
+.info-panel-header {
+  background: var(--panel2);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.info-panel-header h2 {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  color: var(--cyan);
+  letter-spacing: 4px;
+}
+
+.close-info {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  padding: 6px 14px;
+  cursor: pointer;
+  letter-spacing: 2px;
+}
+.close-info:hover { color: var(--red); border-color: var(--red); }
+
+.info-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1px;
+  background: var(--border2);
+}
+
+.info-section {
+  background: var(--panel);
+  padding: 20px 24px;
+}
+
+.info-section h3 {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  color: var(--cyan);
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-section p, .info-section li {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.info-section ul { padding-left: 16px; }
+
+.info-section li strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* COOLANT STATUS LED */
+.pump-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--text2);
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.pump-led {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+}
+
+.pump-led.off {
+  background: var(--border);
+  box-shadow: none;
+}
+
+/* SCROLL CUSTOM */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
 <body>
 
-<h1>⚛️ Reactor Control Room Simulator</h1>
-
-<div class="dashboard">
-
-<div class="reactor">
-<canvas id="sim"></canvas>
+<!-- TOP BAR -->
+<div class="topbar">
+  <div>
+    <div class="topbar-logo">NRCS-7</div>
+    <div class="topbar-sub">NUCLEAR REACTOR CONTROL SYSTEM — UNIT 3</div>
+  </div>
+  <div class="topbar-center">
+    <div class="topbar-stat">
+      <div class="label">REACTOR STATUS</div>
+      <div class="val" id="reactorStatus" style="color:var(--green)">ONLINE</div>
+    </div>
+    <div class="topbar-stat">
+      <div class="label">POWER OUTPUT</div>
+      <div class="val" id="topPower" style="color:var(--cyan)">0%</div>
+    </div>
+    <div class="topbar-stat">
+      <div class="label">CORE TEMP</div>
+      <div class="val" id="topTemp" style="color:var(--cyan)">320°C</div>
+    </div>
+    <div class="topbar-stat">
+      <div class="label">TURBINE RPM</div>
+      <div class="val" id="topRPM" style="color:var(--cyan)">0</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="status-dot" id="statusDot"></div>
+    <div class="clock" id="clock">00:00:00</div>
+    <button class="info-btn" onclick="toggleInfoPanel()">INFO ▲</button>
+  </div>
 </div>
 
-<div class="controls">
+<!-- MAIN -->
+<div class="main">
 
-<h3>Controls</h3>
+  <!-- LEFT PANEL -->
+  <div class="panel left-panel">
+    <div class="panel-header">
+      <div class="ph-dot"></div>
+      <h3>REACTOR CONTROLS</h3>
+    </div>
+    <div class="controls">
 
-<label>Reactor Power</label>
-<input type="range" id="power" min="0" max="100" value="20">
+      <div class="control-group">
+        <div class="control-label">
+          REACTOR POWER <span id="powerVal">0%</span>
+        </div>
+        <div class="slider-track">
+          <input type="range" id="powerSlider" min="0" max="100" value="0"
+            oninput="updateControls()">
+        </div>
+      </div>
 
-<label>Control Rods</label>
-<input type="range" id="rods" min="0" max="100" value="50">
+      <div class="control-group">
+        <div class="control-label">
+          CONTROL RODS <span id="rodsVal">100% INSERTED</span>
+        </div>
+        <div class="slider-track">
+          <input type="range" class="rod-slider" id="rodsSlider" min="0" max="100" value="100"
+            oninput="updateControls()">
+        </div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text2);margin-top:4px">
+          0% = FULL WITHDRAWAL · 100% = FULL INSERT
+        </div>
+      </div>
 
-<button id="scram">EMERGENCY SCRAM</button>
+      <div class="control-group">
+        <div class="control-label">
+          COOLANT FLOW <span id="coolantVal">AUTO</span>
+        </div>
+        <div class="slider-track">
+          <input type="range" id="coolantSlider" min="0" max="100" value="50"
+            oninput="updateControls()">
+        </div>
+        <div class="pump-status">
+          <div class="pump-led" id="pumpLed"></div>
+          <span id="pumpStatus">COOLANT PUMP ACTIVE</span>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="ctrl-btn active" id="coolantBtn" onclick="toggleCoolant()">
+          ▸ COOLANT PUMP
+        </button>
+        <button class="ctrl-btn" id="turbineBtn" onclick="toggleTurbine()">
+          ▸ TURBINE BYPASS
+        </button>
+        <button class="ctrl-btn" id="ventBtn" onclick="toggleVent()">
+          ▸ PRESSURE VENT
+        </button>
+      </div>
+
+      <button class="scram-btn" onclick="doScram()">
+        ⬛ EMERGENCY SCRAM
+      </button>
+    </div>
+
+    <!-- INDICATORS -->
+    <div class="indicators">
+      <div class="ind-box">
+        <div class="ind-label">COOLANT</div>
+        <div class="ind-light on-green" id="coolantInd"></div>
+        <div class="ind-text" id="coolantIndTxt">NORMAL</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-label">PRESSURE</div>
+        <div class="ind-light on-green" id="pressInd"></div>
+        <div class="ind-text" id="pressIndTxt">NORMAL</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-label">SCRAM SYS</div>
+        <div class="ind-light on-green" id="scramInd"></div>
+        <div class="ind-text" id="scramIndTxt">ARMED</div>
+      </div>
+      <div class="ind-box">
+        <div class="ind-label">TURBINE</div>
+        <div class="ind-light" id="turbineInd"></div>
+        <div class="ind-text" id="turbineIndTxt">OFFLINE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER PANEL -->
+  <div class="panel center-panel">
+    <div class="panel-header">
+      <div class="ph-dot"></div>
+      <h3>REACTOR CORE VISUALIZATION — UNIT 3</h3>
+    </div>
+    <div class="reactor-canvas-wrap">
+      <canvas id="reactorCanvas"></canvas>
+    </div>
+    <!-- WARNING BAR -->
+    <div class="warning-bar stable" id="warningBar">
+      <div class="warning-icon">◆</div>
+      <div class="warning-messages" id="warningMessages">
+        <span class="w-msg">ALL SYSTEMS NOMINAL</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel right-panel">
+    <div class="panel-header">
+      <div class="ph-dot"></div>
+      <h3>LIVE REACTOR METERS</h3>
+    </div>
+    <div class="meters">
+      <div class="meter-card" id="tempCard">
+        <div class="meter-name">CORE TEMPERATURE</div>
+        <div>
+          <span class="meter-value" id="tempMeter">320</span>
+          <span class="meter-unit">°C</span>
+        </div>
+        <div class="meter-bar-wrap"><div class="meter-bar" id="tempBar" style="width:10%"></div></div>
+      </div>
+      <div class="meter-card" id="pressCard">
+        <div class="meter-name">SYSTEM PRESSURE</div>
+        <div>
+          <span class="meter-value" id="pressMeter">155</span>
+          <span class="meter-unit">bar</span>
+        </div>
+        <div class="meter-bar-wrap"><div class="meter-bar" id="pressBar" style="width:40%"></div></div>
+      </div>
+      <div class="meter-card" id="radCard">
+        <div class="meter-name">RADIATION LEVEL</div>
+        <div>
+          <span class="meter-value" id="radMeter">0.2</span>
+          <span class="meter-unit">mSv/h</span>
+        </div>
+        <div class="meter-bar-wrap"><div class="meter-bar" id="radBar" style="width:2%"></div></div>
+      </div>
+      <div class="meter-card" id="powerCard">
+        <div class="meter-name">POWER OUTPUT</div>
+        <div>
+          <span class="meter-value" id="powerMeter">0</span>
+          <span class="meter-unit">%</span>
+        </div>
+        <div class="meter-bar-wrap"><div class="meter-bar" id="powerBar" style="width:0%"></div></div>
+      </div>
+      <div class="meter-card" id="neutronCard">
+        <div class="meter-name">NEUTRON FLUX</div>
+        <div>
+          <span class="meter-value" id="neutronMeter">0.0</span>
+          <span class="meter-unit">×10¹² n/cm²s</span>
+        </div>
+        <div class="meter-bar-wrap"><div class="meter-bar" id="neutronBar" style="width:0%"></div></div>
+      </div>
+      <div class="meter-card" id="turbineCard">
+        <div class="meter-name">TURBINE SPEED</div>
+        <div>
+          <span class="meter-value" id="turbineMeter">0</span>
+          <span class="meter-unit">RPM</span>
+        </div>
+        <div class="meter-bar-wrap"><div class="meter-bar" id="turbineBar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar">
+    <div class="bb-item"><div class="bb-dot" id="bb1"></div><span>CONTAINMENT: INTACT</span></div>
+    <div class="bb-item"><div class="bb-dot" id="bb2"></div><span>EMERGENCY COOLING: STANDBY</span></div>
+    <div class="bb-item"><div class="bb-dot" id="bb3"></div><span>SCRAM SYSTEM: ARMED</span></div>
+    <div class="bb-item"><div class="bb-dot" id="bb4"></div><span>GRID CONNECTION: ACTIVE</span></div>
+    <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--text2)">
+      NRCS-7 v4.2.1 · SIMULATION MODE
+    </div>
+  </div>
 
 </div>
 
-<div class="meters">
-
-<h3>Reactor Meters</h3>
-
-<div>Temperature: <span id="temp">300</span> °C</div>
-<div>Pressure: <span id="pressure">80</span> bar</div>
-<div>Power Output: <span id="output">20</span> %</div>
-<div>Radiation Level: <span id="radiation">5</span> mSv</div>
-
-<div id="warningBox" class="safe">
-⚛️ SYSTEM STATUS: STABLE
+<!-- MELTDOWN OVERLAY -->
+<div id="meltdownOverlay"></div>
+<div id="meltdownMsg">
+  <h2>⚠ CORE MELTDOWN IMMINENT ⚠</h2>
+  <p>INITIATE EMERGENCY SCRAM · EVACUATE PERSONNEL</p>
 </div>
 
+<!-- INFO PANEL -->
+<div id="infoPanel">
+  <div class="info-panel-header">
+    <h2>NUCLEAR REACTOR — INFORMATION & SAFETY GUIDE</h2>
+    <button class="close-info" onclick="toggleInfoPanel()">✕ CLOSE</button>
+  </div>
+  <div class="info-content">
+    <div class="info-section">
+      <h3>HOW NUCLEAR REACTORS WORK</h3>
+      <p>A nuclear reactor generates heat through <strong>nuclear fission</strong> — the splitting of heavy atoms (typically Uranium-235). When a neutron strikes a U-235 nucleus, it splits and releases energy as heat, plus 2–3 more neutrons that trigger a chain reaction.</p>
+      <p>This heat converts water into steam, which spins a turbine connected to a generator — producing electricity the same way as a coal plant, but without burning fuel.</p>
+      <p>The reaction rate is controlled by <strong>control rods</strong> made of neutron-absorbing materials (boron, hafnium). Inserting rods slows the reaction; withdrawing them accelerates it.</p>
+    </div>
+    <div class="info-section">
+      <h3>CONTROL SYSTEMS EXPLAINED</h3>
+      <ul>
+        <li><strong>Reactor Power Slider:</strong> Sets the target power level of the reactor core. Higher power = more fission = more heat = more electricity.</li>
+        <li><strong>Control Rod Slider:</strong> Controls neutron absorption. At 100% inserted, the reaction stops. At 0% withdrawn, maximum power is possible.</li>
+        <li><strong>Coolant Flow:</strong> Water circulates through the reactor to transfer heat to the steam generator. Low coolant = overheating risk.</li>
+        <li><strong>Emergency SCRAM:</strong> Instantly inserts all control rods to halt the chain reaction — the fastest way to stop a reactor.</li>
+      </ul>
+    </div>
+    <div class="info-section">
+      <h3>SAFETY SYSTEMS</h3>
+      <ul>
+        <li><strong>SCRAM System:</strong> Automatic shutdown triggered by extreme conditions. Inserts all control rods in under 2 seconds.</li>
+        <li><strong>Emergency Core Cooling (ECCS):</strong> Floods the core with water if temperature becomes critical.</li>
+        <li><strong>Pressure Relief Valves:</strong> Automatically vent steam to prevent pressure vessel rupture.</li>
+        <li><strong>Containment Building:</strong> A reinforced concrete dome designed to contain any release of radioactive material.</li>
+        <li><strong>Defense in Depth:</strong> Multiple redundant barriers between the fuel and the environment.</li>
+      </ul>
+    </div>
+    <div class="info-section">
+      <h3>DANGER ZONES & READINGS</h3>
+      <ul>
+        <li><strong>Temperature >550°C:</strong> Risk of fuel rod damage. SCRAM recommended.</li>
+        <li><strong>Pressure >200 bar:</strong> Critical. Relief valves should activate.</li>
+        <li><strong>Pressure &lt;100 bar:</strong> Low pressure means inadequate coolant flow.</li>
+        <li><strong>Radiation >500 mSv/h:</strong> Significant containment issue — evacuate area.</li>
+        <li><strong>Power &lt;10% with full withdrawal:</strong> Reactor approaching subcriticality.</li>
+      </ul>
+    </div>
+    <div class="info-section">
+      <h3>NUCLEAR POWER FACTS</h3>
+      <p>Nuclear power provides about <strong>10% of global electricity</strong> with the lowest lifecycle carbon emissions of any energy source, including solar and wind.</p>
+      <p>Modern reactors have <strong>passive safety systems</strong> that shut down without external power or human action, using gravity and natural convection.</p>
+      <p>The fuel in a reactor is only ~3–5% enriched Uranium — far too low to make a bomb. A nuclear reactor cannot explode like a nuclear weapon.</p>
+      <p>One kilogram of Uranium fuel produces as much energy as <strong>3,000 tonnes of coal</strong>.</p>
+    </div>
+    <div class="info-section">
+      <h3>SIMULATOR GUIDE</h3>
+      <ul>
+        <li>Start by raising <strong>Reactor Power</strong> to ~50–70%</li>
+        <li>Withdraw <strong>Control Rods</strong> to ~30% for balanced operation</li>
+        <li>Keep <strong>Coolant Pump</strong> active at all times</li>
+        <li>Watch temperature — keep below 550°C for safe operation</li>
+        <li>Hit <strong>SCRAM</strong> if any critical warning appears</li>
+        <li>Try raising power to 100% and see the warnings activate!</li>
+      </ul>
+    </div>
+  </div>
 </div>
 
-</div>
+<script>
+// ==================== STATE ====================
+const state = {
+  power: 0,
+  rods: 100,
+  coolantFlow: 50,
+  coolantOn: true,
+  turbineBypass: false,
+  ventOpen: false,
+  scramActive: false,
+  meltdown: false,
 
-<button id="menuBtn">☰ Menu</button>
+  // Calculated
+  temp: 320,
+  pressure: 155,
+  radiation: 0.2,
+  powerOut: 0,
+  neutronFlux: 0,
+  turbineRpm: 0,
+  turbineAngle: 0,
 
-<div id="menuPanel">
+  // Particles
+  coolantParticles: [],
+  steamParticles: [],
+  time: 0
+};
 
-<h2>Reactor Simulator Guide</h2>
+// Audio context
+let audioCtx = null;
+let reactorNoise = null;
+let alarmOsc = null;
+let alarmOn = false;
 
-<p>This simulator shows how a reactor system works.</p>
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
 
-<p>Reactor Power increases the reaction.</p>
+function playReactorHum(power) {
+  if (!audioCtx) return;
+  if (reactorNoise) { reactorNoise.disconnect(); reactorNoise = null; }
+  if (power < 1) return;
 
-<p>Control Rods slow down the reaction.</p>
+  const bufSize = audioCtx.sampleRate * 2;
+  const buf = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * 0.04;
+  
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
 
-<p>SCRAM shuts down the reactor immediately.</p>
+  const bpf = audioCtx.createBiquadFilter();
+  bpf.type = 'bandpass';
+  bpf.frequency.value = 60 + power * 1.5;
+  bpf.Q.value = 8;
 
-</div>
+  const gain = audioCtx.createGain();
+  gain.gain.value = Math.min(power / 100 * 0.3, 0.3);
 
-<audio id="reactorHum" loop>
-<source src="https://actions.google.com/sounds/v1/ambiences/industrial_plant.ogg">
-</audio>
+  src.connect(bpf);
+  bpf.connect(gain);
+  gain.connect(audioCtx.destination);
+  src.start();
+  reactorNoise = src;
+  reactorNoise._gain = gain;
+}
 
-<audio id="alarmSound">
-<source src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg">
-</audio>
+function playAlarm(on) {
+  if (!audioCtx) return;
+  if (on && !alarmOn) {
+    alarmOn = true;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 880;
+    g.gain.value = 0.15;
+    osc.connect(g);
+    g.connect(audioCtx.destination);
+    osc.start();
+    alarmOsc = osc;
+    alarmOsc._g = g;
+    
+    let up = true;
+    const sweep = setInterval(() => {
+      if (!alarmOn) { clearInterval(sweep); return; }
+      osc.frequency.value = up ? 1200 : 880;
+      up = !up;
+    }, 250);
+  } else if (!on && alarmOn) {
+    alarmOn = false;
+    if (alarmOsc) { alarmOsc.stop(); alarmOsc = null; }
+  }
+}
 
-<script src="script.js"></script>
+// ==================== CANVAS SETUP ====================
+const canvas = document.getElementById('reactorCanvas');
+const ctx2d = canvas.getContext('2d');
 
+function resizeCanvas() {
+  const wrap = canvas.parentElement;
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  initParticles();
+}
+
+window.addEventListener('resize', resizeCanvas);
+setTimeout(resizeCanvas, 100);
+
+// ==================== PARTICLES ====================
+function initParticles() {
+  state.coolantParticles = [];
+  state.steamParticles = [];
+
+  for (let i = 0; i < 60; i++) {
+    state.coolantParticles.push(createCoolantParticle(true));
+  }
+}
+
+function createCoolantParticle(random = false) {
+  const W = canvas.width, H = canvas.height;
+  const cx = W * 0.5, cy = H * 0.5;
+  const segments = getCoolantPath(W, H);
+  const t = random ? Math.random() : 0;
+  return { t, speed: 0.002 + Math.random() * 0.001, size: 2.5 + Math.random() * 1.5, alpha: 0.7 + Math.random() * 0.3 };
+}
+
+function createSteamParticle() {
+  const W = canvas.width, H = canvas.height;
+  return {
+    x: W * 0.5 + (Math.random() - 0.5) * 60,
+    y: H * 0.35,
+    vx: (Math.random() - 0.5) * 0.8,
+    vy: -(0.5 + Math.random() * 1.5),
+    life: 1.0,
+    size: 3 + Math.random() * 5,
+    alpha: 0.3 + Math.random() * 0.4
+  };
+}
+
+function getCoolantPath(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const rW = Math.min(W * 0.18, 100);
+  const rH = Math.min(H * 0.28, 160);
+  const loop1 = {
+    points: [
+      [cx, cy - rH * 0.6],
+      [cx + rW * 1.8, cy - rH * 0.6],
+      [cx + rW * 1.8, cy + rH * 0.6],
+      [cx, cy + rH * 0.6],
+    ]
+  };
+  return loop1;
+}
+
+function getPathPoint(W, H, t) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const rx = Math.min(W * 0.3, 170);
+  const ry = Math.min(H * 0.32, 140);
+  const angle = t * Math.PI * 2 - Math.PI / 2;
+  return {
+    x: cx + Math.cos(angle) * rx,
+    y: cy + Math.sin(angle) * ry
+  };
+}
+
+// ==================== DRAW ====================
+function draw() {
+  const W = canvas.width, H = canvas.height;
+  ctx2d.clearRect(0, 0, W, H);
+
+  // Background grid
+  drawGrid(W, H);
+
+  // Draw pipes
+  drawPipes(W, H);
+
+  // Draw coolant particles
+  drawCoolantParticles(W, H);
+
+  // Draw steam
+  drawSteam(W, H);
+
+  // Draw reactor core
+  drawReactorCore(W, H);
+
+  // Draw control rods
+  drawControlRods(W, H);
+
+  // Draw turbine
+  drawTurbine(W, H);
+
+  // Draw labels
+  drawLabels(W, H);
+}
+
+function drawGrid(W, H) {
+  ctx2d.strokeStyle = 'rgba(26,58,92,0.3)';
+  ctx2d.lineWidth = 0.5;
+  const gs = 40;
+  for (let x = 0; x < W; x += gs) {
+    ctx2d.beginPath();
+    ctx2d.moveTo(x, 0); ctx2d.lineTo(x, H);
+    ctx2d.stroke();
+  }
+  for (let y = 0; y < H; y += gs) {
+    ctx2d.beginPath();
+    ctx2d.moveTo(0, y); ctx2d.lineTo(W, y);
+    ctx2d.stroke();
+  }
+}
+
+function drawPipes(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const rx = Math.min(W * 0.3, 170);
+  const ry = Math.min(H * 0.32, 140);
+
+  // Main coolant loop ellipse
+  ctx2d.strokeStyle = 'rgba(0,184,212,0.35)';
+  ctx2d.lineWidth = 10;
+  ctx2d.beginPath();
+  ctx2d.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx2d.stroke();
+
+  // Inner highlight
+  ctx2d.strokeStyle = 'rgba(0,229,255,0.15)';
+  ctx2d.lineWidth = 4;
+  ctx2d.beginPath();
+  ctx2d.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx2d.stroke();
+
+  // Steam pipe going up from reactor
+  const steamX = cx;
+  const pipeTop = cy - ry - 50;
+  const turbineY = cy - ry - 80;
+
+  ctx2d.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx2d.lineWidth = 8;
+  ctx2d.beginPath();
+  ctx2d.moveTo(steamX, cy - 50);
+  ctx2d.lineTo(steamX, pipeTop);
+  ctx2d.stroke();
+
+  // Right side - steam generator box
+  const sgX = cx + rx + 40;
+  ctx2d.strokeStyle = 'rgba(0,184,212,0.3)';
+  ctx2d.lineWidth = 8;
+  ctx2d.beginPath();
+  ctx2d.moveTo(cx + rx, cy);
+  ctx2d.lineTo(sgX + 50, cy);
+  ctx2d.stroke();
+}
+
+function drawCoolantParticles(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const rx = Math.min(W * 0.3, 170);
+  const ry = Math.min(H * 0.32, 140);
+  const speed = state.coolantOn ? (0.003 + state.powerOut / 100 * 0.008) : 0;
+
+  for (const p of state.coolantParticles) {
+    if (!state.scramActive && state.coolantOn) {
+      p.t = (p.t + p.speed * (speed / 0.003)) % 1;
+    }
+    const angle = p.t * Math.PI * 2 - Math.PI / 2;
+    const x = cx + Math.cos(angle) * rx;
+    const y = cy + Math.sin(angle) * ry;
+
+    const heat = state.temp / 600;
+    const r = Math.round(100 + heat * 155);
+    const g = Math.round(200 - heat * 100);
+    const b = 255;
+
+    ctx2d.beginPath();
+    ctx2d.arc(x, y, p.size, 0, Math.PI * 2);
+    ctx2d.fillStyle = `rgba(${r},${g},${b},${p.alpha * (state.coolantOn ? 1 : 0.2)})`;
+    ctx2d.fill();
+  }
+}
+
+function drawSteam(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const ry = Math.min(H * 0.32, 140);
+
+  if (state.powerOut > 5 && !state.scramActive) {
+    if (Math.random() < state.powerOut / 100 * 0.5) {
+      state.steamParticles.push(createSteamParticle());
+    }
+  }
+
+  for (let i = state.steamParticles.length - 1; i >= 0; i--) {
+    const p = state.steamParticles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= 0.012;
+    p.size += 0.3;
+
+    if (p.life <= 0) {
+      state.steamParticles.splice(i, 1);
+      continue;
+    }
+
+    ctx2d.beginPath();
+    ctx2d.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx2d.fillStyle = `rgba(200,230,255,${p.alpha * p.life * 0.6})`;
+    ctx2d.fill();
+  }
+}
+
+function drawReactorCore(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const baseR = Math.min(W, H) * 0.12;
+  const t = state.time;
+
+  const power = state.powerOut / 100;
+  const heat = Math.min((state.temp - 300) / 400, 1);
+
+  let coreColor, glowColor;
+  if (state.meltdown) {
+    coreColor = 'rgba(255,30,0,0.9)';
+    glowColor = 'rgba(255,0,0,';
+  } else if (heat > 0.7) {
+    coreColor = 'rgba(255,100,0,0.85)';
+    glowColor = 'rgba(255,100,0,';
+  } else if (heat > 0.4) {
+    coreColor = 'rgba(255,200,0,0.85)';
+    glowColor = 'rgba(255,200,0,';
+  } else if (power > 0.1) {
+    coreColor = 'rgba(0,200,255,0.85)';
+    glowColor = 'rgba(0,200,255,';
+  } else {
+    coreColor = 'rgba(50,100,150,0.7)';
+    glowColor = 'rgba(50,100,150,';
+  }
+
+  const pulse = 1 + Math.sin(t * 0.05) * 0.04 * power;
+  const r = baseR * pulse;
+
+  // Outer glow rings
+  for (let i = 3; i >= 1; i--) {
+    const gr = r * (1 + i * 0.35);
+    const ga = (power * 0.15) / i;
+    if (ga < 0.005) continue;
+    const grad = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, gr);
+    grad.addColorStop(0, glowColor + ga + ')');
+    grad.addColorStop(1, glowColor + '0)');
+    ctx2d.beginPath();
+    ctx2d.arc(cx, cy, gr, 0, Math.PI * 2);
+    ctx2d.fillStyle = grad;
+    ctx2d.fill();
+  }
+
+  // Hexagonal reactor vessel
+  const sides = 6;
+  ctx2d.strokeStyle = 'rgba(0,229,255,0.5)';
+  ctx2d.lineWidth = 2;
+  ctx2d.fillStyle = 'rgba(5,20,35,0.9)';
+  ctx2d.beginPath();
+  for (let i = 0; i < sides; i++) {
+    const a = (i / sides) * Math.PI * 2 - Math.PI / 6;
+    const hx = cx + Math.cos(a) * r * 1.3;
+    const hy = cy + Math.sin(a) * r * 1.3;
+    if (i === 0) ctx2d.moveTo(hx, hy); else ctx2d.lineTo(hx, hy);
+  }
+  ctx2d.closePath();
+  ctx2d.fill();
+  ctx2d.stroke();
+
+  // Core gradient fill
+  const cGrad = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, r);
+  cGrad.addColorStop(0, coreColor);
+  cGrad.addColorStop(0.6, coreColor.replace('0.9', '0.5').replace('0.85', '0.4'));
+  cGrad.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx2d.beginPath();
+  ctx2d.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx2d.fillStyle = cGrad;
+  ctx2d.fill();
+
+  // Fuel rod dots
+  const rodCount = 7;
+  for (let i = 0; i < rodCount; i++) {
+    for (let j = 0; j < rodCount; j++) {
+      const fx = cx - r * 0.55 + (i / (rodCount - 1)) * r * 1.1;
+      const fy = cy - r * 0.55 + (j / (rodCount - 1)) * r * 1.1;
+      const dist = Math.sqrt((fx - cx) ** 2 + (fy - cy) ** 2);
+      if (dist > r * 0.65) continue;
+
+      const fuelAlpha = 0.4 + power * 0.5;
+      ctx2d.beginPath();
+      ctx2d.arc(fx, fy, 2.5, 0, Math.PI * 2);
+      ctx2d.fillStyle = coreColor.replace('0.9', fuelAlpha.toFixed(2)).replace('0.85', fuelAlpha.toFixed(2));
+      ctx2d.fill();
+    }
+  }
+
+  // Center reactor label
+  ctx2d.fillStyle = 'rgba(0,229,255,0.8)';
+  ctx2d.font = `bold ${Math.round(r * 0.2)}px "Orbitron"`;
+  ctx2d.textAlign = 'center';
+  ctx2d.textBaseline = 'middle';
+  ctx2d.fillText('CORE', cx, cy);
+}
+
+function drawControlRods(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const baseR = Math.min(W, H) * 0.12;
+  const r = baseR * 1.3;
+  const insertion = state.rods / 100;
+  const numRods = 5;
+
+  for (let i = 0; i < numRods; i++) {
+    const a = (i / numRods) * Math.PI * 2;
+    const rx = cx + Math.cos(a) * r * 0.6;
+    const ry_base = cy - r * 1.1;
+    const ry_tip = cy - r * 0.1;
+    const currentY = ry_base + (ry_tip - ry_base) * insertion;
+
+    // Rod channel
+    ctx2d.strokeStyle = 'rgba(26,58,92,0.5)';
+    ctx2d.lineWidth = 4;
+    ctx2d.beginPath();
+    ctx2d.moveTo(rx, ry_base - 15);
+    ctx2d.lineTo(rx, ry_tip + 5);
+    ctx2d.stroke();
+
+    // Rod itself
+    const rodColor = insertion > 0.7 ? '#00e5ff' : insertion > 0.3 ? '#ffb300' : '#ff1744';
+    ctx2d.strokeStyle = rodColor;
+    ctx2d.lineWidth = 4;
+    ctx2d.beginPath();
+    ctx2d.moveTo(rx, ry_base - 15);
+    ctx2d.lineTo(rx, currentY);
+    ctx2d.stroke();
+
+    // Rod tip glow
+    ctx2d.beginPath();
+    ctx2d.arc(rx, currentY, 5, 0, Math.PI * 2);
+    ctx2d.fillStyle = rodColor;
+    ctx2d.fill();
+  }
+}
+
+function drawTurbine(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const ry = Math.min(H * 0.32, 140);
+  const tx = cx;
+  const ty = cy - ry - 80;
+
+  if (ty < 20) return;
+
+  // Turbine housing
+  ctx2d.strokeStyle = 'rgba(0,229,255,0.4)';
+  ctx2d.lineWidth = 2;
+  ctx2d.fillStyle = 'rgba(5,20,35,0.8)';
+  ctx2d.beginPath();
+  ctx2d.arc(tx, ty, 30, 0, Math.PI * 2);
+  ctx2d.fill();
+  ctx2d.stroke();
+
+  // Rotating blades
+  const bladeCount = 6;
+  const speed = state.powerOut / 100;
+  ctx2d.save();
+  ctx2d.translate(tx, ty);
+  ctx2d.rotate(state.turbineAngle);
+
+  for (let i = 0; i < bladeCount; i++) {
+    const a = (i / bladeCount) * Math.PI * 2;
+    ctx2d.strokeStyle = `rgba(0,229,255,${0.3 + speed * 0.6})`;
+    ctx2d.lineWidth = 3;
+    ctx2d.beginPath();
+    ctx2d.moveTo(0, 0);
+    ctx2d.lineTo(Math.cos(a) * 22, Math.sin(a) * 22);
+    ctx2d.stroke();
+  }
+
+  // Hub
+  ctx2d.fillStyle = speed > 0.1 ? '#00e5ff' : '#1a3a5c';
+  ctx2d.beginPath();
+  ctx2d.arc(0, 0, 5, 0, Math.PI * 2);
+  ctx2d.fill();
+
+  ctx2d.restore();
+
+  // Generator box
+  const gx = tx + 50;
+  ctx2d.fillStyle = 'rgba(5,20,40,0.9)';
+  ctx2d.strokeStyle = 'rgba(0,229,255,0.3)';
+  ctx2d.lineWidth = 1.5;
+  ctx2d.fillRect(gx, ty - 18, 40, 36);
+  ctx2d.strokeRect(gx, ty - 18, 40, 36);
+
+  ctx2d.fillStyle = 'rgba(0,229,255,0.7)';
+  ctx2d.font = '8px "Share Tech Mono"';
+  ctx2d.textAlign = 'center';
+  ctx2d.textBaseline = 'middle';
+  ctx2d.fillText('GEN', gx + 20, ty);
+}
+
+function drawLabels(W, H) {
+  const cx = W * 0.5, cy = H * 0.5;
+  const rx = Math.min(W * 0.3, 170);
+  const ry = Math.min(H * 0.32, 140);
+
+  ctx2d.font = '9px "Share Tech Mono"';
+  ctx2d.fillStyle = 'rgba(106,143,168,0.8)';
+  ctx2d.textAlign = 'center';
+  ctx2d.textBaseline = 'middle';
+
+  ctx2d.fillText('STEAM GENERATOR', cx + rx + 60, cy);
+  ctx2d.fillText('COOLANT LOOP', cx + rx * 0.6, cy + ry + 20);
+  ctx2d.fillText('CONTROL RODS', cx - rx * 0.5, cy - ry * 0.8);
+}
+
+// ==================== PHYSICS UPDATE ====================
+function updatePhysics() {
+  if (state.scramActive) {
+    state.power = 0;
+    state.powerOut *= 0.92;
+    if (state.powerOut < 0.1) state.powerOut = 0;
+  } else {
+    const rodEffect = 1 - (state.rods / 100) * 0.98;
+    state.powerOut += (state.power * rodEffect - state.powerOut) * 0.04;
+    state.powerOut = Math.max(0, Math.min(100, state.powerOut));
+  }
+
+  // Temperature calculation
+  const cooling = state.coolantOn ? (state.coolantFlow / 100) * 1.5 + 0.5 : 0.2;
+  const targetTemp = 320 + state.powerOut * 3.5 / cooling;
+  state.temp += (targetTemp - state.temp) * 0.03;
+  state.temp = Math.max(60, state.temp);
+
+  // Pressure
+  let targetPressure = 155 + state.powerOut * 0.8 + (state.temp - 320) * 0.3;
+  if (state.ventOpen) targetPressure *= 0.6;
+  state.pressure += (targetPressure - state.pressure) * 0.04;
+  state.pressure = Math.max(50, state.pressure);
+
+  // Radiation
+  const targetRad = 0.2 + state.powerOut * 0.05 + (state.temp > 600 ? (state.temp - 600) * 0.5 : 0);
+  state.radiation += (targetRad - state.radiation) * 0.05;
+
+  // Neutron flux
+  state.neutronFlux = state.powerOut * 0.15;
+
+  // Turbine
+  const targetRPM = state.turbineBypass ? 0 : state.powerOut * 36;
+  state.turbineRpm += (targetRPM - state.turbineRpm) * 0.04;
+  state.turbineAngle += state.turbineRpm / 60 * 0.1;
+
+  // Meltdown check
+  state.meltdown = state.temp > 700 || state.pressure > 280;
+}
+
+// ==================== UI UPDATE ====================
+function updateUI() {
+  const t = state.temp, p = state.pressure;
+  const r = state.radiation, po = state.powerOut;
+
+  // Meters
+  document.getElementById('tempMeter').textContent = Math.round(t);
+  document.getElementById('pressMeter').textContent = Math.round(p);
+  document.getElementById('radMeter').textContent = r.toFixed(1);
+  document.getElementById('powerMeter').textContent = Math.round(po);
+  document.getElementById('neutronMeter').textContent = state.neutronFlux.toFixed(1);
+  document.getElementById('turbineMeter').textContent = Math.round(state.turbineRpm);
+
+  // Bars
+  document.getElementById('tempBar').style.width = Math.min(t / 800 * 100, 100) + '%';
+  document.getElementById('pressBar').style.width = Math.min(p / 300 * 100, 100) + '%';
+  document.getElementById('radBar').style.width = Math.min(r / 100 * 100, 100) + '%';
+  document.getElementById('powerBar').style.width = po + '%';
+  document.getElementById('neutronBar').style.width = Math.min(state.neutronFlux / 15 * 100, 100) + '%';
+  document.getElementById('turbineBar').style.width = Math.min(state.turbineRpm / 3600 * 100, 100) + '%';
+
+  // Meter colors
+  function setCardState(id, condition) {
+    const el = document.getElementById(id);
+    el.className = 'meter-card ' + condition;
+  }
+  setCardState('tempCard', t > 600 ? 'hot' : t > 450 ? 'warm' : 'ok');
+  setCardState('pressCard', p > 220 ? 'hot' : p < 100 ? 'warm' : 'ok');
+  setCardState('radCard', r > 10 ? 'hot' : r > 2 ? 'warm' : 'ok');
+  setCardState('powerCard', po < 5 && !state.scramActive ? 'warm' : po > 85 ? 'warm' : 'ok');
+
+  // Top bar
+  document.getElementById('topPower').textContent = Math.round(po) + '%';
+  document.getElementById('topTemp').textContent = Math.round(t) + '°C';
+  document.getElementById('topRPM').textContent = Math.round(state.turbineRpm);
+
+  // Warnings
+  const warnings = [];
+  let warnLevel = 'stable';
+
+  if (state.scramActive) { warnings.push('SCRAM ACTIVE — REACTOR SHUTDOWN'); warnLevel = 'warning'; }
+  if (t > 600) { warnings.push('CORE OVERTEMPERATURE'); warnLevel = 'danger'; }
+  else if (t > 450) { warnings.push('HIGH TEMPERATURE WARNING'); if (warnLevel !== 'danger') warnLevel = 'warning'; }
+  if (p > 220) { warnings.push('HIGH PRESSURE CRITICAL'); warnLevel = 'danger'; }
+  else if (p > 180) { warnings.push('PRESSURE ELEVATED'); if (warnLevel !== 'danger') warnLevel = 'warning'; }
+  if (p < 100 && po > 10) { warnings.push('LOW COOLANT PRESSURE'); if (warnLevel !== 'danger') warnLevel = 'warning'; }
+  if (!state.coolantOn && po > 5) { warnings.push('COOLANT PUMP OFFLINE'); warnLevel = 'danger'; }
+  if (r > 10) { warnings.push('HIGH RADIATION DETECTED'); warnLevel = 'danger'; }
+  if (state.meltdown) { warnings.push('CORE MELTDOWN IMMINENT'); warnLevel = 'danger'; }
+
+  if (warnings.length === 0) warnings.push('ALL SYSTEMS NOMINAL');
+
+  const wb = document.getElementById('warningBar');
+  wb.className = 'warning-bar ' + warnLevel;
+  document.getElementById('warningMessages').innerHTML = warnings.map(w => `<span class="w-msg">${w}</span>`).join('');
+
+  // Status dot
+  const dot = document.getElementById('statusDot');
+  const status = document.getElementById('reactorStatus');
+  if (state.meltdown) {
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    status.textContent = 'CRITICAL'; status.style.color = 'var(--red)';
+  } else if (state.scramActive) {
+    dot.style.background = 'var(--amber)'; dot.style.boxShadow = '0 0 8px var(--amber)';
+    status.textContent = 'SCRAM'; status.style.color = 'var(--amber)';
+  } else if (warnLevel === 'danger') {
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    status.textContent = 'DANGER'; status.style.color = 'var(--red)';
+  } else if (warnLevel === 'warning') {
+    dot.style.background = 'var(--amber)'; dot.style.boxShadow = '0 0 8px var(--amber)';
+    status.textContent = 'WARNING'; status.style.color = 'var(--amber)';
+  } else {
+    dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)';
+    status.textContent = po > 1 ? 'ONLINE' : 'STANDBY';
+    status.style.color = 'var(--green)';
+  }
+
+  // Indicators
+  function setInd(id, txtId, state2, txt) {
+    const el = document.getElementById(id);
+    el.className = 'ind-light ' + state2;
+    document.getElementById(txtId).textContent = txt;
+  }
+  setInd('coolantInd', 'coolantIndTxt',
+    state.coolantOn ? 'on-green' : 'on-red',
+    state.coolantOn ? 'ACTIVE' : 'OFFLINE');
+  setInd('pressInd', 'pressIndTxt',
+    p > 220 ? 'on-red' : p < 100 ? 'on-amber' : 'on-green',
+    p > 220 ? 'HIGH' : p < 100 ? 'LOW' : 'NORMAL');
+  setInd('scramInd', 'scramIndTxt',
+    state.scramActive ? 'on-amber' : 'on-green',
+    state.scramActive ? 'ACTIVATED' : 'ARMED');
+  setInd('turbineInd', 'turbineIndTxt',
+    state.turbineRpm > 100 ? 'on-green' : '',
+    state.turbineRpm > 100 ? 'SPINNING' : 'OFFLINE');
+
+  // Meltdown overlay
+  const mo = document.getElementById('meltdownOverlay');
+  const mm = document.getElementById('meltdownMsg');
+  if (state.meltdown) {
+    mo.style.display = 'block';
+    mm.style.display = 'block';
+  } else {
+    mo.style.display = 'none';
+    mm.style.display = 'none';
+  }
+
+  // Audio
+  if (state.powerOut > 2 && state.coolantOn) {
+    if (!reactorNoise) playReactorHum(state.powerOut);
+    else if (reactorNoise._gain) {
+      reactorNoise._gain.gain.value = state.powerOut / 100 * 0.25;
+    }
+  } else {
+    if (reactorNoise) { reactorNoise.disconnect(); reactorNoise = null; }
+  }
+
+  playAlarm(warnLevel === 'danger');
+
+  // Turbine indicator
+  document.getElementById('turbineInd').className = 'ind-light ' + (state.turbineRpm > 100 ? 'on-green' : '');
+}
+
+// ==================== CONTROLS ====================
+function updateControls() {
+  initAudio();
+  const pv = parseInt(document.getElementById('powerSlider').value);
+  const rv = parseInt(document.getElementById('rodsSlider').value);
+  const cv = parseInt(document.getElementById('coolantSlider').value);
+
+  state.power = pv;
+  state.rods = rv;
+  state.coolantFlow = cv;
+
+  document.getElementById('powerVal').textContent = pv + '%';
+  document.getElementById('rodsVal').textContent = rv + '% ' + (rv > 50 ? 'INSERTED' : 'WITHDRAWN');
+  document.getElementById('coolantVal').textContent = cv + '%';
+
+  if (state.scramActive && pv > 0) {
+    state.scramActive = false;
+    document.getElementById('scramInd').className = 'ind-light on-green';
+  }
+}
+
+function toggleCoolant() {
+  initAudio();
+  state.coolantOn = !state.coolantOn;
+  const btn = document.getElementById('coolantBtn');
+  const led = document.getElementById('pumpLed');
+  const stat = document.getElementById('pumpStatus');
+  if (state.coolantOn) {
+    btn.classList.add('active');
+    led.className = 'pump-led';
+    stat.textContent = 'COOLANT PUMP ACTIVE';
+  } else {
+    btn.classList.remove('active');
+    led.className = 'pump-led off';
+    stat.textContent = 'COOLANT PUMP OFFLINE';
+  }
+}
+
+function toggleTurbine() {
+  initAudio();
+  state.turbineBypass = !state.turbineBypass;
+  const btn = document.getElementById('turbineBtn');
+  btn.classList.toggle('active', state.turbineBypass);
+  btn.textContent = state.turbineBypass ? '▸ TURBINE BYPASS: ON' : '▸ TURBINE BYPASS';
+}
+
+function toggleVent() {
+  initAudio();
+  state.ventOpen = !state.ventOpen;
+  const btn = document.getElementById('ventBtn');
+  btn.classList.toggle('active', state.ventOpen);
+  btn.textContent = state.ventOpen ? '▸ PRESSURE VENT: OPEN' : '▸ PRESSURE VENT';
+}
+
+function doScram() {
+  initAudio();
+  state.scramActive = true;
+  state.power = 0;
+  document.getElementById('powerSlider').value = 0;
+  document.getElementById('rodsSlider').value = 100;
+  state.rods = 100;
+  document.getElementById('powerVal').textContent = '0%';
+  document.getElementById('rodsVal').textContent = '100% INSERTED';
+  document.getElementById('scramInd').className = 'ind-light on-amber';
+
+  // Flash scram button
+  const btn = document.querySelector('.scram-btn');
+  btn.style.background = 'rgba(255,23,68,0.4)';
+  setTimeout(() => { btn.style.background = 'rgba(255,23,68,0.1)'; }, 500);
+}
+
+function toggleInfoPanel() {
+  document.getElementById('infoPanel').classList.toggle('open');
+  const btn = document.querySelector('.info-btn');
+  btn.textContent = document.getElementById('infoPanel').classList.contains('open') ? 'INFO ▼' : 'INFO ▲';
+}
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  document.getElementById('clock').textContent = h + ':' + m + ':' + s;
+}
+
+// ==================== MAIN LOOP ====================
+function loop() {
+  state.time++;
+  updatePhysics();
+  updateUI();
+  draw();
+  updateClock();
+  requestAnimationFrame(loop);
+}
+
+// Init on first interaction to unlock audio
+document.body.addEventListener('click', () => { if (!audioCtx) initAudio(); }, { once: false });
+
+// Start
+setTimeout(() => {
+  resizeCanvas();
+  loop();
+}, 200);
+</script>
 </body>
-
 </html>
