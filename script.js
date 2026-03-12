@@ -1,182 +1,95 @@
-const canvas=document.getElementById("sim");
-const ctx=canvas.getContext("2d");
+    if (reactorNoise) {
+      reactorNoise.stop();
+      reactorNoise = null;
+    }
+  }
 
-canvas.width=800;
-canvas.height=400;
-
-const power=document.getElementById("power");
-const rods=document.getElementById("rods");
-
-const temp=document.getElementById("temp");
-const pressure=document.getElementById("pressure");
-const output=document.getElementById("output");
-const radiation=document.getElementById("radiation");
-
-const warningBox=document.getElementById("warningBox");
-
-const alarm=document.getElementById("alarmSound");
-const reactorHum=document.getElementById("reactorHum");
-
-let turbineAngle=0;
-let flowOffset=0;
-
-let steam=[];
-
-for(let i=0;i<40;i++){
-steam.push({
-x:400+Math.random()*50,
-y:300,
-size:Math.random()*5+2,
-speed:Math.random()*2+1
-});
+  playAlarm(warnLevel === 'danger');
 }
 
-function updateReactor(){
+// ==================== CONTROL HANDLERS ====================
 
-let p=power.value;
-  if(p < 10 && p > 0){
+function updateControls() {
+  initAudio();
 
-warningBox.innerText="⚠️ REACTOR POWER TOO LOW!";
-warningBox.className="warning";
-alarm.play();
+  state.power = Number(document.getElementById('powerSlider').value);
+  state.rods = Number(document.getElementById('rodsSlider').value);
+  state.coolantFlow = Number(document.getElementById('coolantSlider').value);
 
-}
-let r=rods.value;
-
-if(p>0){
-reactorHum.play().catch(()=>{});
-}else{
-reactorHum.pause();
+  document.getElementById('powerVal').textContent = state.power + '%';
+  document.getElementById('rodsVal').textContent =
+    state.rods + '% INSERTED';
+  document.getElementById('coolantVal').textContent =
+    state.coolantFlow + '%';
 }
 
-let t=300+p*5-r*2;
-let pr=80+p*2;
-let rad=Math.floor(5+p*0.8-r*0.5);
+function toggleCoolant() {
+  state.coolantOn = !state.coolantOn;
 
-output.innerText=p;
-temp.innerText=t;
-pressure.innerText=pr;
-radiation.innerText=rad;
+  document.getElementById('coolantBtn').classList.toggle('active', state.coolantOn);
 
-alarm.pause();
-alarm.currentTime=0;
+  const led = document.getElementById('pumpLed');
+  const txt = document.getElementById('pumpStatus');
 
-if(pr>200){
-
-warningBox.innerText="⚠️ PRESSURE TOO HIGH!";
-warningBox.className="danger";
-alarm.play();
-
+  if (state.coolantOn) {
+    led.classList.remove('off');
+    txt.textContent = 'COOLANT PUMP ACTIVE';
+  } else {
+    led.classList.add('off');
+    txt.textContent = 'PUMP OFFLINE';
+  }
 }
 
-else if(pr<50){
-
-warningBox.innerText="⚠️ PRESSURE TOO LOW!";
-warningBox.className="warning";
-alarm.play();
-
+function toggleTurbine() {
+  state.turbineBypass = !state.turbineBypass;
+  document.getElementById('turbineBtn').classList.toggle('active', !state.turbineBypass);
 }
 
-else if(t>800){
-
-warningBox.innerText="🔥 CORE OVERHEATING!";
-warningBox.className="danger";
-alarm.play();
-
+function toggleVent() {
+  state.ventOpen = !state.ventOpen;
+  document.getElementById('ventBtn').classList.toggle('active', state.ventOpen);
 }
 
-else{
+function doScram() {
+  state.scramActive = true;
+  state.rods = 100;
 
-warningBox.innerText="⚛️ SYSTEM STATUS: STABLE";
-warningBox.className="safe";
+  document.getElementById('rodsSlider').value = 100;
 
+  setTimeout(() => {
+    state.scramActive = false;
+  }, 6000);
 }
 
+// ==================== INFO PANEL ====================
+
+function toggleInfoPanel() {
+  document.getElementById('infoPanel').classList.toggle('open');
 }
 
-document.getElementById("scram").onclick=function(){
+// ==================== CLOCK ====================
 
-power.value=0;
-rods.value=100;
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
 
-updateReactor();
-
-alert("SCRAM ACTIVATED - REACTOR SHUTDOWN");
-
+  document.getElementById('clock').textContent = `${h}:${m}:${s}`;
 }
 
-power.addEventListener("input",updateReactor);
-rods.addEventListener("input",updateReactor);
+setInterval(updateClock,1000);
 
-const menuBtn=document.getElementById("menuBtn");
-const menuPanel=document.getElementById("menuPanel");
+// ==================== MAIN LOOP ====================
 
-menuBtn.onclick=function(){
-menuPanel.classList.toggle("open");
+function loop() {
+  state.time += 1;
+
+  updatePhysics();
+  draw();
+  updateUI();
+
+  requestAnimationFrame(loop);
 }
 
-function drawSystem(){
-
-ctx.clearRect(0,0,canvas.width,canvas.height);
-
-ctx.fillStyle="orange";
-ctx.fillRect(150,150,80,80);
-
-ctx.strokeStyle="cyan";
-ctx.lineWidth=6;
-
-ctx.beginPath();
-ctx.moveTo(230,190);
-ctx.lineTo(500,190);
-ctx.stroke();
-
-for(let i=0;i<10;i++){
-
-ctx.beginPath();
-ctx.arc(230+i*30+flowOffset,190,5,0,Math.PI*2);
-ctx.fillStyle="cyan";
-ctx.fill();
-
-}
-
-ctx.save();
-
-ctx.translate(550,190);
-ctx.rotate(turbineAngle);
-
-for(let i=0;i<4;i++){
-
-ctx.rotate(Math.PI/2);
-ctx.fillStyle="silver";
-ctx.fillRect(0,0,60,10);
-
-}
-
-ctx.restore();
-
-steam.forEach(p=>{
-
-ctx.beginPath();
-ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-ctx.fillStyle="rgba(200,200,200,0.5)";
-ctx.fill();
-
-p.y-=p.speed;
-
-if(p.y<150){
-p.y=300;
-}
-
-});
-
-flowOffset+=2;
-if(flowOffset>30)flowOffset=0;
-
-turbineAngle+=0.05;
-
-requestAnimationFrame(drawSystem);
-
-}
-
-updateReactor();
-drawSystem();
+loop();
