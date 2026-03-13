@@ -329,368 +329,427 @@ input[type=range].rod-slider::-webkit-slider-thumb {
   flex-direction: column;
 }
 
+/* ============================================================
+   REACTOR 3D SCENE — CSS + JS POWERED
+   ============================================================ */
+
 .reactor-canvas-wrap {
   flex: 1;
   position: relative;
   overflow: hidden;
+  background: #03070e;
 }
 
-canvas#reactorCanvas {
-  display: block;
+/* ---- SCENE ROOT ---- */
+.scene3d {
   width: 100%;
   height: 100%;
-}
-
-/* WARNING BAR */
-.warning-bar {
-  padding: 10px 20px;
-  background: var(--panel2);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 11px;
-  letter-spacing: 2px;
-  transition: all 0.3s;
-}
-
-.warning-bar.stable { color: var(--green); border-color: var(--green2); }
-.warning-bar.warning { color: var(--amber); border-color: var(--amber); }
-.warning-bar.danger { color: var(--red); border-color: var(--red); animation: blink-bar 0.5s infinite; }
-
-@keyframes blink-bar {
-  0%,100% { opacity:1; }
-  50% { opacity:0.3; }
-}
-
-.warning-icon {
-  font-size: 16px;
-  width: 20px;
-  text-align: center;
-}
-
-.warning-messages {
-  flex: 1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.w-msg {
-  padding: 2px 8px;
-  border: 1px solid currentColor;
-  font-size: 9px;
-  opacity: 0.9;
-}
-
-/* RIGHT PANEL - METERS */
-.right-panel { grid-row: 1; grid-column: 3; }
-.meters { padding: 14px; }
-
-.meter-card {
-  background: var(--panel2);
-  border: 1px solid var(--border2);
-  padding: 10px 12px;
-  margin-bottom: 10px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.meter-card::before {
-  content: '';
+/* ---- ENVIRONMENT ---- */
+.env-bg {
   position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 2px;
-  background: var(--cyan);
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 60%, #060f1e 0%, #02060d 100%);
 }
 
-.meter-name {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 9px;
-  color: var(--text2);
-  letter-spacing: 2px;
-  margin-bottom: 6px;
+.env-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,120,180,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,120,180,0.06) 1px, transparent 1px);
+  background-size: 36px 36px;
 }
 
-.meter-value {
-  font-family: 'Orbitron', monospace;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--cyan);
-  line-height: 1;
+.env-floor-shadow {
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 340px; height: 40px;
+  background: radial-gradient(ellipse, rgba(0,0,0,0.7) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.meter-unit {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  color: var(--text2);
-  margin-left: 4px;
+.env-glow {
+  position: absolute;
+  width: 500px; height: 400px;
+  border-radius: 50%;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -52%);
+  pointer-events: none;
+  transition: background 1.2s ease;
+  mix-blend-mode: screen;
 }
 
-.meter-bar-wrap {
-  height: 3px;
-  background: var(--border);
-  margin-top: 8px;
-  border-radius: 2px;
+/* ============================================================
+   RPV — REACTOR PRESSURE VESSEL
+   Full 3D box model, isometric-style 3-face rendering
+   ============================================================ */
+
+.rpv-world {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -48%);
+  width: 0; height: 0;
+}
+
+/* Each component is positioned relative to rpv-world origin */
+/* Using translate3d for crisp subpixel rendering */
+
+/* ---- PEDESTAL ---- */
+.blk {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+/* We render each 3-face isometric box as 3 divs:
+   .f = front face (facing viewer-left)  
+   .s = side face  (facing viewer-right)
+   .t = top face
+   These are sized and positioned by JS via inline styles or data-attrs.
+   The CSS below defines the appearance only.
+*/
+
+.face-f { position: absolute; }
+.face-s { position: absolute; }
+.face-t { position: absolute; }
+
+/* ---- MAIN REACTOR VESSEL ---- */
+#rpv-scene {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600px; height: 520px;
+  pointer-events: none;
+}
+
+#rpv-scene canvas {
+  position: absolute;
+  top: 0; left: 0;
+}
+
+/* ---- INTERNALS WINDOW (DOM overlay on canvas) ---- */
+.internals-overlay {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+  border: 1px solid rgba(0,180,255,0.25);
+  background: #020a14;
+}
+
+.coolant-body {
+  position: absolute;
+  inset: 0;
+  transition: background 1s;
+}
+
+.core-vessel {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #04101c;
+  border-left: 1px solid rgba(0,120,180,0.3);
+  border-right: 1px solid rgba(0,120,180,0.3);
   overflow: hidden;
 }
 
-.meter-bar {
-  height: 100%;
-  background: var(--cyan);
-  border-radius: 2px;
-  transition: width 0.5s ease;
-}
-
-.meter-card.hot .meter-value { color: var(--red); }
-.meter-card.hot::before { background: var(--red); }
-.meter-card.hot .meter-bar { background: var(--red); }
-.meter-card.warm .meter-value { color: var(--amber); }
-.meter-card.warm::before { background: var(--amber); }
-.meter-card.warm .meter-bar { background: var(--amber); }
-.meter-card.ok .meter-value { color: var(--green); }
-.meter-card.ok::before { background: var(--green); }
-.meter-card.ok .meter-bar { background: var(--green); }
-
-/* SECONDARY INDICATORS */
-.indicators {
+.fuel-grid-wrap {
+  position: absolute;
+  inset: 2px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 0 14px 14px;
+  gap: 1.5px;
 }
 
-.ind-box {
-  background: var(--panel2);
-  border: 1px solid var(--border2);
-  padding: 8px;
-  text-align: center;
-}
+.fr { border-radius: 1px; transition: background 0.35s, box-shadow 0.35s; }
 
-.ind-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 8px;
-  color: var(--text2);
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-
-.ind-light {
-  width: 12px; height: 12px;
+.cherenkov-layer {
+  position: absolute;
+  inset: -8px;
   border-radius: 50%;
-  margin: 0 auto 4px;
-  background: var(--border);
+  pointer-events: none;
+  animation: cher 2.2s ease-in-out infinite;
+  transition: background 0.6s, opacity 0.6s;
+}
+@keyframes cher { 0%,100%{opacity:0.9;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.95)} }
+
+.bubble-layer { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.bub {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(0,220,255,0.45);
+  animation: bub-rise linear forwards;
+}
+@keyframes bub-rise {
+  0%   { transform: translateY(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-90px) scale(1.8); opacity: 0; }
 }
 
-.ind-light.on-green {
-  background: var(--green);
-  box-shadow: 0 0 8px var(--green);
+/* ---- CRDM OVERLAY ---- */
+.crdm-overlay {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  pointer-events: none;
 }
-.ind-light.on-amber {
-  background: var(--amber);
-  box-shadow: 0 0 8px var(--amber);
+.crdm-item { display:flex; flex-direction:column; align-items:center; }
+.crdm-stem {
+  border-radius: 2px 2px 0 0;
+  transition: height 0.9s cubic-bezier(0.4,0,0.2,1), background 0.5s, box-shadow 0.5s;
 }
-.ind-light.on-red {
-  background: var(--red);
-  box-shadow: 0 0 8px var(--red);
-  animation: blink-light 0.5s infinite;
+.crdm-house {
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, #2c6080 0%, #1a3d55 100%);
+  border: 1px solid rgba(0,180,255,0.25);
+  position: relative;
 }
-@keyframes blink-light {
-  0%,100%{opacity:1} 50%{opacity:0.2}
+.crdm-house::after {
+  content:'';
+  position:absolute;
+  top:2px; left:2px; right:2px;
+  height:3px;
+  background: rgba(255,255,255,0.12);
+  border-radius:1px;
 }
 
-.ind-text {
+/* ---- BOLT RING ---- */
+.bolt-row {
+  position: absolute;
+  display: flex;
+  justify-content: space-around;
+  pointer-events: none;
+}
+.blt {
+  width:8px; height:8px; border-radius:50%;
+  background: radial-gradient(circle at 35% 30%, #9abccc 0%, #3a5a6a 60%, #1a2a35 100%);
+  border: 1px solid rgba(0,0,0,0.5);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* ---- NOZZLE STUBS ---- */
+.nozzle-stub {
+  position: absolute;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* ---- STEAM GENERATORS ---- */
+.sg-wrap {
+  position: absolute;
+  pointer-events: none;
+}
+.sg-canvas { position:absolute; top:0; left:0; }
+
+/* ---- PRESSURIZER ---- */
+.pzr-wrap { position:absolute; pointer-events:none; }
+
+/* ---- PIPE SYSTEM ---- */
+.pipe-wrap { position:absolute; inset:0; pointer-events:none; }
+
+/* ---- ANNOTATION LABELS ---- */
+.anno-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.anno-label {
+  position: absolute;
   font-family: 'Share Tech Mono', monospace;
   font-size: 9px;
-  color: var(--text2);
-}
-
-/* BOTTOM BAR */
-.bottom-bar {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  background: var(--panel2);
-  border-top: 1px solid var(--border);
-  padding: 6px 20px;
-  display: flex;
-  gap: 30px;
-  align-items: center;
-}
-
-.bb-item {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px;
-  color: var(--text2);
+  color: rgba(0,229,255,0.5);
+  letter-spacing: 1.5px;
+  white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
+.anno-label::before {
+  content: '';
+  display: block;
+  width: 16px; height: 1px;
+  background: rgba(0,229,255,0.3);
+}
+.anno-label.right { flex-direction: row-reverse; }
+.anno-label.right::before { background: rgba(0,229,255,0.3); }
 
-.bb-item .bb-dot {
-  width: 6px; height: 6px;
+/* ---- STEAM PARTICLES ---- */
+.steam-layer { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+.sp {
+  position: absolute;
   border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 4px var(--green);
+  background: rgba(180,220,240,0.2);
+  animation: sp-rise linear forwards;
+}
+@keyframes sp-rise {
+  0%   { transform:scale(0.4) translateY(0);   opacity:0.7; }
+  40%  { opacity:0.4; }
+  100% { transform:scale(2.8) translateY(-60px); opacity:0; }
 }
 
-/* MELTDOWN OVERLAY */
-#meltdownOverlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(180,0,0,0.15);
-  z-index: 100;
+/* ---- MELTDOWN FX ---- */
+.meltdown-layer { position:absolute; inset:0; pointer-events:none; display:none; }
+.flare {
+  position:absolute;
+  border-radius:50% 50% 20% 20%;
+  animation: flare-up linear infinite;
+}
+@keyframes flare-up {
+  0%   { transform:scaleX(1)   translateY(0);    opacity:1; }
+  50%  { transform:scaleX(1.4) translateY(-35px); opacity:0.7; }
+  100% { transform:scaleX(0.6) translateY(-75px); opacity:0; }
+}
+
+/* ---- PIPE FLOW DOTS ---- */
+.flow-dot {
+  position: absolute;
+  border-radius: 50%;
   pointer-events: none;
-  animation: meltdown-flash 0.4s infinite;
+  transition: background 0.8s;
 }
 
-@keyframes meltdown-flash {
-  0%,100%{opacity:1} 50%{opacity:0.3}
-}
 
-#meltdownMsg {
-  display: none;
+/* JSON SCENARIO PANEL */
+#scenarioPanel {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%,-50%);
-  background: rgba(0,0,0,0.92);
-  border: 2px solid var(--red);
-  padding: 30px 50px;
-  text-align: center;
-  z-index: 200;
-  pointer-events: none;
-}
-
-#meltdownMsg h2 {
-  font-family: 'Orbitron', monospace;
-  font-size: 28px;
-  font-weight: 900;
-  color: var(--red);
-  letter-spacing: 6px;
-  text-shadow: 0 0 30px var(--red);
-  animation: blink-bar 0.3s infinite;
-}
-
-#meltdownMsg p {
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 13px;
-  color: var(--amber);
-  letter-spacing: 3px;
-  margin-top: 10px;
-}
-
-/* INFO PANEL (SLIDE-IN FROM BOTTOM) */
-#infoPanel {
-  position: fixed;
-  bottom: -100%;
-  left: 0; right: 0;
-  height: 65vh;
+  right: 20px;
+  bottom: 60px;
+  width: 300px;
   background: var(--panel);
-  border-top: 2px solid var(--cyan);
-  z-index: 300;
-  transition: bottom 0.4s cubic-bezier(0.4,0,0.2,1);
-  overflow-y: auto;
+  border: 1px solid var(--cyan2);
+  box-shadow: 0 0 20px rgba(0,229,255,0.15);
+  z-index: 500;
+  font-family: 'Share Tech Mono', monospace;
 }
 
-#infoPanel.open { bottom: 0; }
-
-.info-panel-header {
+#scenarioPanel .sp-header {
   background: var(--panel2);
   border-bottom: 1px solid var(--border);
-  padding: 14px 24px;
+  padding: 8px 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
-.info-panel-header h2 {
+#scenarioPanel .sp-header span {
   font-family: 'Orbitron', monospace;
-  font-size: 14px;
+  font-size: 9px;
   color: var(--cyan);
-  letter-spacing: 4px;
+  letter-spacing: 3px;
 }
 
-.close-info {
+#scenarioPanel .sp-body { padding: 12px; }
+
+#scenarioPanel textarea {
+  width: 100%;
+  height: 110px;
+  background: #040810;
+  border: 1px solid var(--border);
+  color: var(--green);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 8px;
+  resize: none;
+  outline: none;
+  line-height: 1.6;
+}
+
+#scenarioPanel textarea:focus { border-color: var(--cyan2); }
+
+#scenarioPanel textarea::placeholder { color: var(--text2); }
+
+.sp-btns { display: flex; gap: 6px; margin-top: 8px; }
+
+.sp-apply {
+  flex: 1;
+  background: rgba(0,229,255,0.1);
+  border: 1px solid var(--cyan2);
+  color: var(--cyan);
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  padding: 8px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.2s;
+}
+.sp-apply:hover { background: rgba(0,229,255,0.2); box-shadow: 0 0 10px rgba(0,229,255,0.2); }
+
+.sp-clear {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text2);
   font-family: 'Orbitron', monospace;
-  font-size: 10px;
-  padding: 6px 14px;
+  font-size: 9px;
+  padding: 8px 10px;
   cursor: pointer;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
 }
-.close-info:hover { color: var(--red); border-color: var(--red); }
+.sp-clear:hover { border-color: var(--red); color: var(--red); }
 
-.info-content {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1px;
-  background: var(--border2);
-}
-
-.info-section {
-  background: var(--panel);
-  padding: 20px 24px;
-}
-
-.info-section h3 {
-  font-family: 'Orbitron', monospace;
-  font-size: 11px;
-  color: var(--cyan);
-  letter-spacing: 3px;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.info-section p, .info-section li {
-  font-size: 13px;
-  color: var(--text2);
-  line-height: 1.7;
-  margin-bottom: 8px;
-}
-
-.info-section ul { padding-left: 16px; }
-
-.info-section li strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
-/* COOLANT STATUS LED */
-.pump-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Share Tech Mono', monospace;
+.sp-status {
+  margin-top: 8px;
   font-size: 10px;
   color: var(--text2);
   letter-spacing: 1px;
-  margin-top: 8px;
+  min-height: 14px;
+  transition: color 0.3s;
 }
 
-.pump-led {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--green);
-  box-shadow: 0 0 6px var(--green);
+.sp-status.ok { color: var(--green); }
+.sp-status.err { color: var(--red); }
+
+.sp-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border2);
+  padding-top: 10px;
 }
 
-.pump-led.off {
-  background: var(--border);
-  box-shadow: none;
+.sp-preset-label {
+  font-size: 9px;
+  color: var(--text2);
+  letter-spacing: 2px;
+  width: 100%;
+  margin-bottom: 2px;
 }
 
-/* SCROLL CUSTOM */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.sp-preset {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 9px;
+  padding: 4px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+}
+.sp-preset:hover { border-color: var(--cyan2); color: var(--cyan); }
+
+#toggleScenarioBtn {
+  position: fixed;
+  right: 20px;
+  bottom: 34px;
+  background: rgba(0,229,255,0.1);
+  border: 1px solid var(--cyan2);
+  color: var(--cyan);
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  padding: 5px 14px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  z-index: 500;
+  transition: all 0.2s;
+}
+#toggleScenarioBtn:hover { background: rgba(0,229,255,0.2); }
 </style>
 </head>
 <body>
@@ -822,8 +881,46 @@ canvas#reactorCanvas {
       <div class="ph-dot"></div>
       <h3>REACTOR CORE VISUALIZATION — UNIT 3</h3>
     </div>
-    <div class="reactor-canvas-wrap">
-      <canvas id="reactorCanvas"></canvas>
+    <div class="reactor-canvas-wrap" id="reactorScene">
+      <div class="scene3d" id="scene3d">
+        <div class="env-bg"></div>
+        <div class="env-grid"></div>
+        <div class="env-glow" id="envGlow"></div>
+
+        <!-- MAIN CANVAS — all 3D geometry drawn here -->
+        <canvas id="rpvCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+
+        <!-- INTERNALS CUTAWAY OVERLAY -->
+        <div class="internals-overlay" id="internalsOverlay">
+          <div class="coolant-body" id="coolantBody"></div>
+          <div class="core-vessel" id="coreVessel">
+            <div class="fuel-grid-wrap" id="fuelGrid"></div>
+            <div class="cherenkov-layer" id="cherenkov"></div>
+            <div class="bubble-layer" id="bubbleLayer"></div>
+          </div>
+        </div>
+
+        <!-- CRDM OVERLAY -->
+        <div class="crdm-overlay" id="crdmOverlay"></div>
+
+        <!-- BOLT RING -->
+        <div class="bolt-row" id="boltRow"></div>
+
+        <!-- NOZZLE STUBS -->
+        <div id="nozzleLayer"></div>
+
+        <!-- ANNOTATIONS -->
+        <div class="anno-wrap" id="annoWrap"></div>
+
+        <!-- STEAM LAYER -->
+        <div class="steam-layer" id="steamLayer"></div>
+
+        <!-- MELTDOWN FX -->
+        <div class="meltdown-layer" id="meltdownLayer"></div>
+
+        <!-- FLOOR SHADOW -->
+        <div class="env-floor-shadow" id="floorShadow"></div>
+      </div>
     </div>
     <!-- WARNING BAR -->
     <div class="warning-bar stable" id="warningBar">
@@ -903,6 +1000,33 @@ canvas#reactorCanvas {
     </div>
   </div>
 
+</div>
+
+<!-- SCENARIO RUNNER TOGGLE -->
+<button id="toggleScenarioBtn" onclick="toggleScenarioPanel()">JSON CTRL &#9650;</button>
+
+<!-- JSON SCENARIO PANEL -->
+<div id="scenarioPanel" style="display:none;">
+  <div class="sp-header">
+    <span>AI SCENARIO RUNNER</span>
+    <button class="sp-clear" onclick="toggleScenarioPanel()" style="border:none;padding:2px 8px;">&#x2715;</button>
+  </div>
+  <div class="sp-body">
+    <textarea id="scenarioJSON" placeholder="Paste JSON here:&#10;{&#10;  &quot;coreTemp&quot;: 80,&#10;  &quot;powerLevel&quot;: 65,&#10;  &quot;rodPosition&quot;: 50&#10;}"></textarea>
+    <div class="sp-btns">
+      <button class="sp-apply" onclick="runJSON()">&#9658; APPLY SCENARIO</button>
+      <button class="sp-clear" onclick="clearJSON()">CLR</button>
+    </div>
+    <div class="sp-status" id="spStatus">AWAITING INPUT</div>
+    <div class="sp-presets">
+      <div class="sp-preset-label">QUICK PRESETS</div>
+      <button class="sp-preset" onclick="loadPreset('cold')">COLD SHUTDOWN</button>
+      <button class="sp-preset" onclick="loadPreset('low')">LOW POWER</button>
+      <button class="sp-preset" onclick="loadPreset('nominal')">NOMINAL OPS</button>
+      <button class="sp-preset" onclick="loadPreset('high')">HIGH POWER</button>
+      <button class="sp-preset" onclick="loadPreset('critical')" style="color:var(--red);border-color:var(--red)">CRITICAL</button>
+    </div>
+  </div>
 </div>
 
 <!-- MELTDOWN OVERLAY -->
@@ -999,6 +1123,7 @@ const state = {
   // Particles
   coolantParticles: [],
   steamParticles: [],
+  bubbleParticles: [],
   time: 0
 };
 
@@ -1070,425 +1195,610 @@ function playAlarm(on) {
   }
 }
 
-// ==================== CANVAS SETUP ====================
-const canvas = document.getElementById('reactorCanvas');
-const ctx2d = canvas.getContext('2d');
+// ==================== REACTOR 3D RENDERER ====================
+// High-fidelity isometric 3D using Canvas 2D + CSS DOM overlays
+
+let RX, canvas3d, ctx3;  // reactive layout vars
+
+// ---- ISOMETRIC PROJECTION ----
+// World: X=right, Y=up, Z=toward viewer
+// Angles: 30° isometric
+const ISO_AX = Math.cos(Math.PI/6);
+const ISO_AY = Math.sin(Math.PI/6);
+
+function project(wx, wy, wz, ox, oy, S) {
+  return [
+    ox + (wx - wz) * ISO_AX * S,
+    oy - wy * S   + (wx + wz) * ISO_AY * S
+  ];
+}
+
+// ---- COLOUR HELPERS ----
+function lerpColor(c1, c2, t) {
+  const parse = c => c.match(/\d+/g).map(Number);
+  const [r1,g1,b1]=parse(c1), [r2,g2,b2]=parse(c2);
+  return `rgb(${Math.round(r1+(r2-r1)*t)},${Math.round(g1+(g2-g1)*t)},${Math.round(b1+(b2-b1)*t)})`;
+}
+
+function shade(r,g,b,f) { return `rgb(${Math.round(r*f)},${Math.round(g*f)},${Math.round(b*f)})`; }
+
+// ---- ISOMETRIC FACE DRAWING ----
+function isoTop(c, ox,oy,S, wx,wy,wz, ww,wd, R,G,B, bright=1.0) {
+  // Top face: corners at (wx,wy,wz), (+ww,0,0), (+ww,0,+wd), (0,0,+wd)
+  const p0=project(wx,   wy,wz,    ox,oy,S);
+  const p1=project(wx+ww,wy,wz,    ox,oy,S);
+  const p2=project(wx+ww,wy,wz+wd, ox,oy,S);
+  const p3=project(wx,   wy,wz+wd, ox,oy,S);
+  c.beginPath();
+  c.moveTo(...p0); c.lineTo(...p1); c.lineTo(...p2); c.lineTo(...p3);
+  c.closePath();
+  c.fillStyle = shade(R,G,B,bright);
+  c.fill();
+}
+
+function isoLeft(c, ox,oy,S, wx,wy,wz, ww,wh, R,G,B, bright=0.65) {
+  // Left face: bottom-left quad
+  const p0=project(wx,   wy,   wz+ww, ox,oy,S);
+  const p1=project(wx,   wy+wh,wz+ww, ox,oy,S);
+  const p2=project(wx,   wy+wh,wz,    ox,oy,S);
+  const p3=project(wx,   wy,   wz,    ox,oy,S);
+  c.beginPath();
+  c.moveTo(...p0); c.lineTo(...p1); c.lineTo(...p2); c.lineTo(...p3);
+  c.closePath();
+  c.fillStyle = shade(R,G,B,bright);
+  c.fill();
+}
+
+function isoRight(c, ox,oy,S, wx,wy,wz, wd,wh, R,G,B, bright=0.45) {
+  // Right face
+  const p0=project(wx+wd,wy,   wz,    ox,oy,S);
+  const p1=project(wx+wd,wy+wh,wz,    ox,oy,S);
+  const p2=project(wx+wd,wy+wh,wz+wd, ox,oy,S);
+  const p3=project(wx+wd,wy,   wz+wd, ox,oy,S);
+  c.beginPath();
+  c.moveTo(...p0); c.lineTo(...p1); c.lineTo(...p2); c.lineTo(...p3);
+  c.closePath();
+  c.fillStyle = shade(R,G,B,bright);
+  c.fill();
+}
+
+// Full isometric box  
+function isoBox(c, ox,oy,S, wx,wy,wz, ww,wh,wd, R,G,B, stroke=false) {
+  // Draw in back-to-front order
+  isoRight(c,ox,oy,S, wx,wy,wz, ww,wh, R,G,B, 0.42);
+  isoLeft (c,ox,oy,S, wx,wy,wz, ww,wh, R,G,B, 0.62);
+  isoTop  (c,ox,oy,S, wx,wy,wz, ww,wd, R,G,B, 1.0);
+  if (stroke) {
+    c.strokeStyle='rgba(0,0,0,0.4)'; c.lineWidth=0.6;
+    isoRight(c,ox,oy,S, wx,wy,wz, ww,wh, 0,0,0, 0); c.stroke();
+  }
+}
+
+// Isometric cylinder (poly approximation)
+function isoCylinder(c, ox,oy,S, cx,cy_b,cz, radius,height, R,G,B, segs=20) {
+  // Side faces
+  for (let i=0;i<segs;i++) {
+    const a1=(i/segs)*Math.PI*2,   a2=((i+1)/segs)*Math.PI*2;
+    const x1=cx+Math.cos(a1)*radius, z1=cz+Math.sin(a1)*radius;
+    const x2=cx+Math.cos(a2)*radius, z2=cz+Math.sin(a2)*radius;
+    // Shading: left side bright, right side dark
+    const faceAngle=(a1+a2)/2;
+    const lit = Math.cos(faceAngle + 0.8);
+    const bright = 0.35 + 0.55*(lit*0.5+0.5);
+    const b1=project(x1,cy_b,       z1,ox,oy,S);
+    const b2=project(x2,cy_b,       z2,ox,oy,S);
+    const t2=project(x2,cy_b+height,z2,ox,oy,S);
+    const t1=project(x1,cy_b+height,z1,ox,oy,S);
+    c.beginPath();
+    c.moveTo(...b1); c.lineTo(...b2); c.lineTo(...t2); c.lineTo(...t1);
+    c.closePath();
+    c.fillStyle=shade(R,G,B,bright);
+    c.fill();
+  }
+  // Top ellipse
+  c.beginPath();
+  let first=true;
+  for (let i=0;i<=segs;i++) {
+    const a=(i/segs)*Math.PI*2;
+    const p=project(cx+Math.cos(a)*radius,cy_b+height,cz+Math.sin(a)*radius,ox,oy,S);
+    first ? c.moveTo(...p) : c.lineTo(...p);
+    first=false;
+  }
+  c.closePath();
+  c.fillStyle=shade(R,G,B,1.15);
+  c.fill();
+  c.strokeStyle='rgba(0,0,0,0.25)'; c.lineWidth=0.4; c.stroke();
+}
+
+// Thick pipe segment
+function isoPipe(c, ox,oy,S, x1,y1,z1, x2,y2,z2, R,G,B, r=0.22) {
+  const dx=x2-x1, dy=y2-y1, dz=z2-z1;
+  const segs=10;
+  for (let i=0;i<segs;i++) {
+    const t0=i/segs, t1=(i+1)/segs;
+    const mx=(x1+dx*((t0+t1)/2)), my=(y1+dy*((t0+t1)/2)), mz=(z1+dz*((t0+t1)/2));
+    // draw tiny cross-section disc
+    const px=project(mx,my,mz,ox,oy,S);
+    // shade based on height
+    const bright=0.5+my*0.05;
+    isoCylinder(c,ox,oy,S, x1+dx*t0,y1+dy*t0,z1+dz*t0, r,dy*(t1-t0)||0.01, R,G,B, 6);
+  }
+}
+
+// ---- DOM OVERLAY POSITIONING ----
+let O = { W:0,H:0,S:18,ox:300,oy:400, VW:5,VH:14,VD:5,VX:-2.5,VZ:-2.5,VY_B:1.5 };
+
+function computeLayout() {
+  const wrap = document.getElementById('reactorScene');
+  if (!wrap) return;
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  canvas3d.width  = W;
+  canvas3d.height = H;
+
+  // Isometric origin and scale
+  const S = Math.min(W,H) * 0.042;
+  const ox = W*0.50;
+  const oy = H*0.78;
+
+  O = { W,H,S,ox,oy };
+
+  // Compute key screen positions for DOM overlays
+  // Internals window sits on the front face of the vessel
+  // Vessel: center at (0,0,0), width=5, height=14, depth=5
+  const VW=5,VH=14,VD=5;
+  const VX=-VW/2, VZ=-VD/2, VY_B=1.5; // base Y
+
+  // Front-left corner of vessel front face (z=VZ+VD)
+  const tl = project(VX,       VY_B+VH, VZ+VD, ox,oy,S);
+  const bl = project(VX,       VY_B,    VZ+VD, ox,oy,S);
+  const tr = project(VX+VW,    VY_B+VH, VZ+VD, ox,oy,S);
+  const br = project(VX+VW,    VY_B,    VZ+VD, ox,oy,S);
+
+  // Internals window: 55% width, 70% height of front face
+  const iw = Math.abs(br[0]-bl[0])*0.72;
+  const ih = Math.abs(tl[1]-bl[1])*0.72;
+  const ix = (bl[0]+br[0])/2 - iw/2;
+  const iy = (tl[1]+bl[1])/2 - ih/2;
+
+  const overlay = document.getElementById('internalsOverlay');
+  if (overlay) {
+    overlay.style.cssText = `
+      left:${Math.round(ix)}px; top:${Math.round(iy)}px;
+      width:${Math.round(iw)}px; height:${Math.round(ih)}px;
+    `;
+  }
+
+  // Core vessel inside overlay
+  const cv = document.getElementById('coreVessel');
+  if (cv) {
+    const cw=Math.round(iw*0.72), ch=Math.round(ih*0.8);
+    cv.style.cssText=`width:${cw}px;height:${ch}px;top:${Math.round(ih*0.1)}px;`;
+  }
+
+  // CRDM overlay — sits above reactor head
+  const headTop = project(0, VY_B+VH+4.5, 0, ox,oy,S);
+  const crdmOv = document.getElementById('crdmOverlay');
+  if (crdmOv) {
+    const cw2 = S*VW*0.9;
+    crdmOv.style.cssText=`
+      left:${headTop[0]-cw2/2}px; top:${headTop[1]-S*3.5}px;
+      width:${cw2}px; height:${Math.round(S*4.5)}px;
+      gap:${Math.round(S*0.38)}px; padding:${Math.round(S*0.2)}px;
+    `;
+  }
+
+  // Bolt ring
+  const flangeTop = project(-VW/2-0.3, VY_B+VH+0.6, VZ+VD, ox,oy,S);
+  const flangeRight = project(VW/2+0.3, VY_B+VH+0.6, VZ+VD, ox,oy,S);
+  const boltRow = document.getElementById('boltRow');
+  if (boltRow) {
+    boltRow.style.cssText=`
+      left:${flangeTop[0]}px; top:${flangeTop[1]-5}px;
+      width:${Math.abs(flangeRight[0]-flangeTop[0])}px; height:10px;
+    `;
+  }
+
+  // Annotations
+  positionAnnotations(ox,oy,S,VX,VY_B,VZ,VW,VH,VD);
+
+  O.VX=VX; O.VZ=VZ; O.VY_B=VY_B; O.VW=VW; O.VH=VH; O.VD=VD;
+}
+
+function positionAnnotations(ox,oy,S,VX,VY_B,VZ,VW,VH,VD) {
+  const wrap=document.getElementById('annoWrap');
+  if (!wrap) return;
+  wrap.innerHTML='';
+
+  const annos = [
+    { wx:VX+VW+0.3, wy:VY_B+VH+4.5, wz:VZ+VD, text:'CRDM ARRAY', side:'right' },
+    { wx:VX+VW+0.3, wy:VY_B+VH+1.5, wz:VZ+VD, text:'REACTOR HEAD', side:'right' },
+    { wx:VX+VW+0.3, wy:VY_B+VH-0.3,wz:VZ+VD, text:'HEAD FLANGE', side:'right' },
+    { wx:VX+VW+0.3, wy:VY_B+VH*0.68,wz:VZ+VD, text:'HOT LEG', side:'right' },
+    { wx:VX+VW+0.3, wy:VY_B+VH*0.42,wz:VZ+VD, text:'COLD LEG', side:'right' },
+    { wx:VX+VW+0.3, wy:VY_B+VH*0.22,wz:VZ+VD, text:'LOWER HEAD', side:'right' },
+    { wx:VX-0.5, wy:VY_B+VH*0.55, wz:VZ+VD, text:'ACTIVE CORE', side:'left' },
+    { wx:VX-0.5, wy:VY_B+VH*0.82, wz:VZ+VD, text:'COOLANT INLET', side:'left' },
+  ];
+
+  annos.forEach(a => {
+    const [sx,sy] = project(a.wx,a.wy,a.wz,ox,oy,S);
+    const div = document.createElement('div');
+    div.className = 'anno-label' + (a.side==='left'?' right':'');
+    div.style.cssText=`left:${Math.round(sx)}px;top:${Math.round(sy)-6}px;`;
+    div.textContent = a.text;
+    wrap.appendChild(div);
+  });
+}
+
+// ---- MAIN DRAW ----
+function draw() {
+  if (!canvas3d || !ctx3) return;
+  const {W,H,S,ox,oy,VX,VZ,VY_B,VW,VH,VD} = O;
+  if (!W) return;
+
+  const c = ctx3;
+  const power    = state.powerOut/100;
+  const heat     = Math.min((state.temp-60)/690,1);
+  const insertion= state.rods/100;
+  const t        = state.time;
+
+  c.clearRect(0,0,W,H);
+
+  // ---- VESSEL MATERIAL COLORS (heat-driven) ----
+  // Steel blue → orange-red as temperature rises
+  const vR = Math.round(30  + heat*180);
+  const vG = Math.round(80  + heat* 20 - heat*heat*80);
+  const vB = Math.round(130 - heat*120);
+
+  // ---- FLOOR / GROUND PLANE ----
+  const floorY=0;
+  c.fillStyle='#050e1a';
+  c.beginPath();
+  const fl=project(-12,floorY,-8,ox,oy,S), fr=project(12,floorY,-8,ox,oy,S);
+  const br2=project(12,floorY,12,ox,oy,S), bl2=project(-12,floorY,12,ox,oy,S);
+  c.moveTo(...fl);c.lineTo(...fr);c.lineTo(...br2);c.lineTo(...bl2);c.closePath();
+  c.fillStyle='#040c18'; c.fill();
+  // Floor grid
+  c.strokeStyle='rgba(0,80,140,0.2)'; c.lineWidth=0.5;
+  for(let i=-10;i<=10;i+=2){
+    const a=project(i,floorY,-8,ox,oy,S), b=project(i,floorY,12,ox,oy,S);
+    const a2=project(-12,floorY,i,ox,oy,S), b2=project(12,floorY,i,ox,oy,S);
+    c.beginPath();c.moveTo(...a);c.lineTo(...b);c.stroke();
+    c.beginPath();c.moveTo(...a2);c.lineTo(...b2);c.stroke();
+  }
+
+  // ---- PEDESTAL ----
+  isoBox(c,ox,oy,S, -2.2,floorY,-2.2, 4.4,1.5,4.4, 25,38,50);
+  isoBox(c,ox,oy,S, -2.8,floorY,-2.8, 5.6,0.4,5.6, 20,30,42);
+
+  // ---- STEAM GENERATORS ----
+  const sgH=11, sgR=1.3;
+  // SG-A (left)
+  isoCylinder(c,ox,oy,S, -8, floorY+0.6, 0, sgR, sgH, 38,65,85, 24);
+  isoCylinder(c,ox,oy,S, -8, floorY+sgH+0.6, 0, sgR*0.7, 1.4, 50,85,100, 16);
+  // SG legs
+  isoBox(c,ox,oy,S, -9,floorY,-0.5, 0.4,0.6,0.4, 20,30,42);
+  isoBox(c,ox,oy,S, -7.4,floorY,-0.5, 0.4,0.6,0.4, 20,30,42);
+  // Label pos - skip canvas text for perf, use DOM
+
+  // SG-B (right)
+  isoCylinder(c,ox,oy,S, 8, floorY+0.6, 0, sgR, sgH, 38,65,85, 24);
+  isoCylinder(c,ox,oy,S, 8, floorY+sgH+0.6, 0, sgR*0.7, 1.4, 50,85,100, 16);
+  isoBox(c,ox,oy,S, 7,floorY,-0.5, 0.4,0.6,0.4, 20,30,42);
+  isoBox(c,ox,oy,S, 8.6,floorY,-0.5, 0.4,0.6,0.4, 20,30,42);
+
+  // ---- PRESSURIZER ----
+  const pzrX=5.5, pzrZ=3;
+  isoCylinder(c,ox,oy,S, pzrX, floorY+0.6, pzrZ, 0.9, 8, 40,68,92, 20);
+  isoCylinder(c,ox,oy,S, pzrX, floorY+8.6, pzrZ, 0.6, 0.9, 55,85,105, 14);
+  // pressure level fill
+  const pLevel = Math.min(state.pressure/280,1)*7.5;
+  const pR=state.pressure>220?200:state.pressure>160?200:0;
+  const pG=state.pressure>220?50:state.pressure>160?150:160;
+  const pB=state.pressure>220?20:state.pressure>160?20:255;
+  if (pLevel>0.1) isoCylinder(c,ox,oy,S, pzrX, floorY+0.6, pzrZ, 0.75, pLevel, pR,pG,pB, 16);
+
+  // ---- PRIMARY LOOP PIPES ----
+  const hotR=Math.round(200+heat*55), hotG=Math.round(100-heat*80), hotB=Math.round(20-heat*10);
+  const coldR=30, coldG=100, coldB=220;
+  // Hot legs
+  drawThickPipe(c,ox,oy,S, -VW/2,VY_B+VH*0.7,VZ, -8,VY_B+5,0, hotR,hotG,hotB);
+  drawThickPipe(c,ox,oy,S,  VW/2,VY_B+VH*0.7,VZ,  8,VY_B+5,0, hotR,hotG,hotB);
+  // Cold legs
+  drawThickPipe(c,ox,oy,S, -8,VY_B+3,0, -VW/2,VY_B+3,VZ, coldR,coldG,coldB);
+  drawThickPipe(c,ox,oy,S,  8,VY_B+3,0,  VW/2,VY_B+3,VZ, coldR,coldG,coldB);
+  // PZR pipe
+  drawThickPipe(c,ox,oy,S, VW/2,VY_B+VH*0.75,VZ, pzrX,VY_B+5,pzrZ, hotR,hotG,hotB);
+
+  // ---- MAIN RPV LOWER DOME ----
+  // Approximate dome as squashed cylinder
+  isoCylinder(c,ox,oy,S, 0,VY_B,0, VW/2, 0.7, vR,vG,vB, 24);
+
+  // ---- MAIN RPV BARREL ----
+  isoCylinder(c,ox,oy,S, 0,VY_B+0.7, 0, VW/2, VH-1.2, vR,vG,vB, 28);
+
+  // Insulation ring (slightly larger, translucent)
+  c.globalAlpha=0.18;
+  isoCylinder(c,ox,oy,S, 0,VY_B+0.7, 0, VW/2+0.22, VH-1.5, 60,120,160, 20);
+  c.globalAlpha=1.0;
+
+  // Nozzle stubs (hot/cold legs)
+  isoCylinder(c,ox,oy,S, -VW/2, VY_B+VH*0.65, 0, 0.35, 0.9, hotR,hotG,hotB, 12);
+  isoCylinder(c,ox,oy,S,  VW/2, VY_B+VH*0.65, 0, 0.35, 0.9, hotR,hotG,hotB, 12);
+  isoCylinder(c,ox,oy,S, -VW/2, VY_B+VH*0.38, 0, 0.35, 0.9, coldR,coldG,coldB, 12);
+  isoCylinder(c,ox,oy,S,  VW/2, VY_B+VH*0.38, 0, 0.35, 0.9, coldR,coldG,coldB, 12);
+
+  // ---- RPV HEAD FLANGE ----
+  isoCylinder(c,ox,oy,S, 0, VY_B+VH, 0, VW/2+0.3, 0.55, 60,95,115, 24);
+
+  // ---- REACTOR HEAD ----
+  const headR=Math.max(vR-10,0), headG=Math.max(vG+10,0), headB=Math.min(vB+20,255);
+  isoCylinder(c,ox,oy,S, 0, VY_B+VH+0.55, 0, VW/2, 2.2, headR,headG,headB, 24);
+  // Head dome cap
+  isoCylinder(c,ox,oy,S, 0, VY_B+VH+2.75, 0, VW/2*0.75, 0.9, headR+10,headG+10,headB, 20);
+
+  // ---- GLOW UNDERNEATH CORE ---- 
+  if (power>0.05) {
+    const glow=project(0, VY_B+VH*0.5, 0, ox,oy,S);
+    const gr=c.createRadialGradient(...glow,0,...glow,S*VW*(0.4+power*0.6));
+    const ga=power*0.5;
+    if (heat>0.6) {
+      gr.addColorStop(0,`rgba(255,80,0,${ga})`);
+      gr.addColorStop(1,'rgba(0,0,0,0)');
+    } else {
+      gr.addColorStop(0,`rgba(0,160,255,${ga*0.8})`);
+      gr.addColorStop(1,'rgba(0,0,0,0)');
+    }
+    c.fillStyle=gr; c.fillRect(0,0,W,H);
+  }
+
+  // ---- TURBINE BUILDING (right side) ----
+  const tbX=12, tbZ=-2;
+  isoBox(c,ox,oy,S, tbX-1.5,floorY,tbZ-1.5, 3,3.5,3, 28,42,55);
+  isoCylinder(c,ox,oy,S, tbX,floorY+3.5,tbZ, 1.1, 1.4, 45,65,80, 18);
+  // turbine rotor
+  const trpm=state.turbineRpm/3600;
+  if (trpm>0.01) {
+    const tCenter=project(tbX,floorY+4.5,tbZ,ox,oy,S);
+    c.save();
+    c.translate(...tCenter);
+    c.rotate(state.turbineAngle);
+    for(let b=0;b<8;b++){
+      const ba=(b/8)*Math.PI*2;
+      c.strokeStyle=`rgba(0,229,255,${0.3+trpm*0.6})`;
+      c.lineWidth=2;
+      c.beginPath();c.moveTo(0,0);
+      c.lineTo(Math.cos(ba)*S*1.0,Math.sin(ba)*S*0.5);
+      c.stroke();
+    }
+    c.fillStyle=trpm>0.1?'#00e5ff':'#1a3a5c';
+    c.beginPath();c.arc(0,0,4,0,Math.PI*2);c.fill();
+    c.restore();
+  }
+  // Generator block
+  isoBox(c,ox,oy,S, tbX+1.5,floorY+1,tbZ-1, 2,2,2, 35,52,68);
+
+  // ---- CANVAS LABELS ----
+  c.font = `${Math.round(S*0.28)}px "Share Tech Mono"`;
+  c.textAlign='center';
+  c.textBaseline='middle';
+  c.fillStyle='rgba(0,229,255,0.55)';
+  const sgAPos=project(-8,floorY+6,0,ox,oy,S);
+  const sgBPos=project(8,floorY+6,0,ox,oy,S);
+  const pzrPos=project(pzrX+2,floorY+5,pzrZ,ox,oy,S);
+  const tbPos=project(tbX+1,floorY+2,tbZ,ox,oy,S);
+  c.fillText('SG-A',sgAPos[0],sgAPos[1]);
+  c.fillText('SG-B',sgBPos[0],sgBPos[1]);
+  c.fillStyle='rgba(255,180,80,0.55)';
+  c.fillText('PZR',pzrPos[0],pzrPos[1]);
+  c.fillStyle='rgba(0,229,255,0.45)';
+  c.fillText('TURBINE',tbPos[0],tbPos[1]);
+
+  // ---- VESSEL LABEL ----
+  c.font=`bold ${Math.round(S*0.24)}px "Orbitron"`;
+  c.fillStyle='rgba(0,229,255,0.7)';
+  c.textAlign='center';
+  const rpvLbl=project(0,VY_B+VH*0.5,VZ+VD*0.5+0.1,ox,oy,S);
+  // skip if overlaps internals
+
+  // Update DOM overlays
+  updateDOMOverlays(power,heat,insertion,t,S,ox,oy);
+}
+
+function drawThickPipe(c,ox,oy,S, x1,y1,z1, x2,y2,z2, R,G,B) {
+  const steps=8, r=0.28;
+  for (let i=0;i<steps;i++) {
+    const t0=i/steps, t1=(i+1)/steps;
+    const mx=x1+(x2-x1)*((t0+t1)/2);
+    const my=y1+(y2-y1)*((t0+t1)/2);
+    const mz=z1+(z2-z1)*((t0+t1)/2);
+    const dy=Math.abs(y2-y1)/steps || r*0.5;
+    isoCylinder(c,ox,oy,S, x1+(x2-x1)*t0, y1+(y2-y1)*t0, z1+(z2-z1)*t0, r, dy, R,G,B, 8);
+  }
+}
+
+// ---- DOM OVERLAY UPDATES ----
+let overlaysBuilt=false;
+function updateDOMOverlays(power,heat,insertion,t,S,ox,oy) {
+  if (!overlaysBuilt) {
+    buildDOMOverlays(S);
+    overlaysBuilt=true;
+  }
+
+  // Coolant water colour
+  const cb=document.getElementById('coolantBody');
+  if (cb) {
+    const r2=Math.round(heat*160), g2=Math.round(30+power*40), b2=Math.round(100-heat*80+power*60);
+    const a1=(0.25+power*0.25).toFixed(2), a2=(0.45+power*0.2).toFixed(2);
+    cb.style.background=`linear-gradient(180deg,rgba(${r2},${g2},${b2+60},${a1}) 0%,rgba(${r2},${g2},${b2},${a2}) 100%)`;
+  }
+
+  // Fuel rods
+  document.querySelectorAll('.fr').forEach((r,i)=>{
+    const dist=parseFloat(r.dataset.d||0);
+    if (dist>3.6) return;
+    const flicker=Math.sin(t*0.07+i*0.85)*0.07*power;
+    const lh=Math.max(0,Math.min(1,heat+flicker));
+    let col, glow='none';
+    if (state.meltdown)  { col='#ff2200'; glow=`0 0 6px #ff2200`; }
+    else if (lh>0.72) { col=`rgb(${220+Math.round(lh*35)},${Math.max(0,60-Math.round(lh*40))},0)`; glow=`0 0 4px ${col}`; }
+    else if (lh>0.42) { col=`rgb(${180+Math.round(lh*50)},${130+Math.round(lh*30)},0)`; glow=`0 0 3px ${col}`; }
+    else if (power>0.04){ col=`rgb(0,${100+Math.round(power*130)},${170+Math.round(power*70)})`; glow=power>0.15?`0 0 3px ${col}`:'none'; }
+    else col='#0e2a3c';
+    r.style.background=col;
+    r.style.boxShadow=glow;
+  });
+
+  // Cherenkov
+  const ch=document.getElementById('cherenkov');
+  if (ch) {
+    const ci=power*(state.coolantOn?1:0.2);
+    ch.style.opacity=(state.meltdown?0:ci).toFixed(2);
+    ch.style.background=`radial-gradient(circle, rgba(0,${Math.round(140+power*115)},255,${(0.22+power*0.38).toFixed(2)}) 0%, transparent 65%)`;
+  }
+
+  // CRDMs
+  const rodColor=insertion>0.7?'#00e5ff':insertion>0.3?'#ffb300':'#ff1744';
+  const stemH=Math.round((1-insertion)*26);
+  document.querySelectorAll('.crdm-stem').forEach(r=>{
+    r.style.height=stemH+'px';
+    r.style.background=`linear-gradient(180deg,${rodColor},${rodColor}99)`;
+    r.style.boxShadow=`0 0 5px ${rodColor}88`;
+  });
+
+  // Env glow
+  const eg=document.getElementById('envGlow');
+  if (eg) {
+    const a=(0.05+power*0.25).toFixed(2);
+    if (state.meltdown) eg.style.background=`radial-gradient(ellipse 80% 60% at 50% 60%, rgba(255,30,0,${a}) 0%, transparent 70%)`;
+    else if (heat>0.5)  eg.style.background=`radial-gradient(ellipse 80% 60% at 50% 60%, rgba(255,120,0,${a}) 0%, transparent 70%)`;
+    else                eg.style.background=`radial-gradient(ellipse 80% 60% at 50% 60%, rgba(0,${Math.round(80+power*180)},255,${a}) 0%, transparent 70%)`;
+  }
+
+  spawnEffects(power);
+}
+
+function buildDOMOverlays(S) {
+  // Fuel grid
+  const fg=document.getElementById('fuelGrid');
+  if (fg) {
+    fg.innerHTML='';
+    const COLS=8, ROWS=10;
+    fg.style.gridTemplateColumns=`repeat(${COLS},1fr)`;
+    fg.style.gridTemplateRows=`repeat(${ROWS},1fr)`;
+    for(let r2=0;r2<ROWS;r2++) for(let c2=0;c2<COLS;c2++) {
+      const cx=(c2-(COLS-1)/2), cy=(r2-(ROWS-1)/2);
+      const dist=Math.sqrt(cx*cx*0.9+cy*cy*0.65);
+      const fr=document.createElement('div');
+      fr.className='fr'; fr.dataset.d=dist.toFixed(2);
+      if (dist>3.8) fr.style.visibility='hidden';
+      fg.appendChild(fr);
+    }
+  }
+
+  // CRDMs (3×3 grid)
+  const co=document.getElementById('crdmOverlay');
+  if (co) {
+    co.innerHTML='';
+    const houseH=Math.round(S*0.5);
+    for(let i=0;i<9;i++) {
+      const item=document.createElement('div');
+      item.className='crdm-item';
+      const stem=document.createElement('div');
+      stem.className='crdm-stem';
+      stem.style.cssText=`width:${Math.round(S*0.22)}px;height:20px;`;
+      const house=document.createElement('div');
+      house.className='crdm-house';
+      house.style.cssText=`width:${Math.round(S*0.36)}px;height:${houseH}px;`;
+      item.appendChild(stem); item.appendChild(house);
+      co.appendChild(item);
+    }
+  }
+
+  // Bolt ring
+  const br=document.getElementById('boltRow');
+  if (br) {
+    br.innerHTML='';
+    for(let i=0;i<18;i++) {
+      const b=document.createElement('div');
+      b.className='blt'; br.appendChild(b);
+    }
+  }
+}
+
+// ---- PARTICLE EFFECTS ----
+let steamTick=0, bubbleTick=0;
+function spawnEffects(power) {
+  steamTick++;
+  bubbleTick++;
+
+  // Steam puffs from SG tops
+  if (power>0.06 && !state.scramActive && steamTick%Math.round(9-power*7)===0) {
+    const sl=document.getElementById('steamLayer');
+    if (sl) {
+      [{x:'23%',y:'8%'},{x:'73%',y:'8%'}].forEach(pos=>{
+        const p=document.createElement('div');
+        p.className='sp';
+        const sz=5+Math.random()*9*power;
+        p.style.cssText=`width:${sz}px;height:${sz}px;left:calc(${pos.x}+${(Math.random()-.5)*20}px);top:${pos.y};animation-duration:${1.4+Math.random()*1.8}s;`;
+        sl.appendChild(p);
+        setTimeout(()=>p.remove(),3200);
+      });
+    }
+  }
+
+  // Core bubbles
+  if (power>0.1 && state.coolantOn && bubbleTick%Math.round(14-power*10)===0) {
+    const bl=document.getElementById('bubbleLayer');
+    if (bl) {
+      const b=document.createElement('div');
+      b.className='bub';
+      const sz=2+Math.random()*4;
+      b.style.cssText=`width:${sz}px;height:${sz}px;left:${8+Math.random()*60}%;bottom:${Math.random()*25}%;animation-duration:${0.7+Math.random()*1}s;`;
+      bl.appendChild(b);
+      setTimeout(()=>b.remove(),2000);
+    }
+  }
+
+  // Meltdown flames
+  const mf=document.getElementById('meltdownLayer');
+  if (mf) {
+    mf.style.display=state.meltdown?'block':'none';
+    if (state.meltdown && steamTick%3===0) {
+      const {W,H}=O;
+      const f=document.createElement('div');
+      f.className='flare';
+      const sz=12+Math.random()*20;
+      const colors=['rgba(255,50,0,0.9)','rgba(255,120,0,0.8)','rgba(255,200,0,0.7)'];
+      f.style.cssText=`
+        width:${sz}px;height:${sz*1.8}px;
+        left:${35+Math.random()*30}%;bottom:${28+Math.random()*15}%;
+        background:${colors[Math.floor(Math.random()*colors.length)]};
+        animation-duration:${0.4+Math.random()*0.5}s;
+      `;
+      mf.appendChild(f);
+      setTimeout(()=>f.remove(),900);
+    }
+  }
+}
+
+// ---- INIT ----
+function initParticles() {
+  canvas3d = document.getElementById('rpvCanvas');
+  if (!canvas3d) return;
+  ctx3 = canvas3d.getContext('2d');
+  computeLayout();
+}
 
 function resizeCanvas() {
-  const wrap = canvas.parentElement;
-  canvas.width = wrap.clientWidth;
-  canvas.height = wrap.clientHeight;
-  initParticles();
+  overlaysBuilt=false;
+  computeLayout();
 }
 
 window.addEventListener('resize', resizeCanvas);
-setTimeout(resizeCanvas, 100);
 
-// ==================== PARTICLES ====================
-function initParticles() {
-  state.coolantParticles = [];
-  state.steamParticles = [];
 
-  for (let i = 0; i < 60; i++) {
-    state.coolantParticles.push(createCoolantParticle(true));
-  }
-}
 
-function createCoolantParticle(random = false) {
-  const W = canvas.width, H = canvas.height;
-  const cx = W * 0.5, cy = H * 0.5;
-  const segments = getCoolantPath(W, H);
-  const t = random ? Math.random() : 0;
-  return { t, speed: 0.002 + Math.random() * 0.001, size: 2.5 + Math.random() * 1.5, alpha: 0.7 + Math.random() * 0.3 };
-}
-
-function createSteamParticle() {
-  const W = canvas.width, H = canvas.height;
-  return {
-    x: W * 0.5 + (Math.random() - 0.5) * 60,
-    y: H * 0.35,
-    vx: (Math.random() - 0.5) * 0.8,
-    vy: -(0.5 + Math.random() * 1.5),
-    life: 1.0,
-    size: 3 + Math.random() * 5,
-    alpha: 0.3 + Math.random() * 0.4
-  };
-}
-
-function getCoolantPath(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const rW = Math.min(W * 0.18, 100);
-  const rH = Math.min(H * 0.28, 160);
-  const loop1 = {
-    points: [
-      [cx, cy - rH * 0.6],
-      [cx + rW * 1.8, cy - rH * 0.6],
-      [cx + rW * 1.8, cy + rH * 0.6],
-      [cx, cy + rH * 0.6],
-    ]
-  };
-  return loop1;
-}
-
-function getPathPoint(W, H, t) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const rx = Math.min(W * 0.3, 170);
-  const ry = Math.min(H * 0.32, 140);
-  const angle = t * Math.PI * 2 - Math.PI / 2;
-  return {
-    x: cx + Math.cos(angle) * rx,
-    y: cy + Math.sin(angle) * ry
-  };
-}
-
-// ==================== DRAW ====================
-function draw() {
-  const W = canvas.width, H = canvas.height;
-  ctx2d.clearRect(0, 0, W, H);
-
-  // Background grid
-  drawGrid(W, H);
-
-  // Draw pipes
-  drawPipes(W, H);
-
-  // Draw coolant particles
-  drawCoolantParticles(W, H);
-
-  // Draw steam
-  drawSteam(W, H);
-
-  // Draw reactor core
-  drawReactorCore(W, H);
-
-  // Draw control rods
-  drawControlRods(W, H);
-
-  // Draw turbine
-  drawTurbine(W, H);
-
-  // Draw labels
-  drawLabels(W, H);
-}
-
-function drawGrid(W, H) {
-  ctx2d.strokeStyle = 'rgba(26,58,92,0.3)';
-  ctx2d.lineWidth = 0.5;
-  const gs = 40;
-  for (let x = 0; x < W; x += gs) {
-    ctx2d.beginPath();
-    ctx2d.moveTo(x, 0); ctx2d.lineTo(x, H);
-    ctx2d.stroke();
-  }
-  for (let y = 0; y < H; y += gs) {
-    ctx2d.beginPath();
-    ctx2d.moveTo(0, y); ctx2d.lineTo(W, y);
-    ctx2d.stroke();
-  }
-}
-
-function drawPipes(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const rx = Math.min(W * 0.3, 170);
-  const ry = Math.min(H * 0.32, 140);
-
-  // Main coolant loop ellipse
-  ctx2d.strokeStyle = 'rgba(0,184,212,0.35)';
-  ctx2d.lineWidth = 10;
-  ctx2d.beginPath();
-  ctx2d.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-  ctx2d.stroke();
-
-  // Inner highlight
-  ctx2d.strokeStyle = 'rgba(0,229,255,0.15)';
-  ctx2d.lineWidth = 4;
-  ctx2d.beginPath();
-  ctx2d.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-  ctx2d.stroke();
-
-  // Steam pipe going up from reactor
-  const steamX = cx;
-  const pipeTop = cy - ry - 50;
-  const turbineY = cy - ry - 80;
-
-  ctx2d.strokeStyle = 'rgba(255,255,255,0.15)';
-  ctx2d.lineWidth = 8;
-  ctx2d.beginPath();
-  ctx2d.moveTo(steamX, cy - 50);
-  ctx2d.lineTo(steamX, pipeTop);
-  ctx2d.stroke();
-
-  // Right side - steam generator box
-  const sgX = cx + rx + 40;
-  ctx2d.strokeStyle = 'rgba(0,184,212,0.3)';
-  ctx2d.lineWidth = 8;
-  ctx2d.beginPath();
-  ctx2d.moveTo(cx + rx, cy);
-  ctx2d.lineTo(sgX + 50, cy);
-  ctx2d.stroke();
-}
-
-function drawCoolantParticles(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const rx = Math.min(W * 0.3, 170);
-  const ry = Math.min(H * 0.32, 140);
-  const speed = state.coolantOn ? (0.003 + state.powerOut / 100 * 0.008) : 0;
-
-  for (const p of state.coolantParticles) {
-    if (!state.scramActive && state.coolantOn) {
-      p.t = (p.t + p.speed * (speed / 0.003)) % 1;
-    }
-    const angle = p.t * Math.PI * 2 - Math.PI / 2;
-    const x = cx + Math.cos(angle) * rx;
-    const y = cy + Math.sin(angle) * ry;
-
-    const heat = state.temp / 600;
-    const r = Math.round(100 + heat * 155);
-    const g = Math.round(200 - heat * 100);
-    const b = 255;
-
-    ctx2d.beginPath();
-    ctx2d.arc(x, y, p.size, 0, Math.PI * 2);
-    ctx2d.fillStyle = `rgba(${r},${g},${b},${p.alpha * (state.coolantOn ? 1 : 0.2)})`;
-    ctx2d.fill();
-  }
-}
-
-function drawSteam(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const ry = Math.min(H * 0.32, 140);
-
-  if (state.powerOut > 5 && !state.scramActive) {
-    if (Math.random() < state.powerOut / 100 * 0.5) {
-      state.steamParticles.push(createSteamParticle());
-    }
-  }
-
-  for (let i = state.steamParticles.length - 1; i >= 0; i--) {
-    const p = state.steamParticles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.life -= 0.012;
-    p.size += 0.3;
-
-    if (p.life <= 0) {
-      state.steamParticles.splice(i, 1);
-      continue;
-    }
-
-    ctx2d.beginPath();
-    ctx2d.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx2d.fillStyle = `rgba(200,230,255,${p.alpha * p.life * 0.6})`;
-    ctx2d.fill();
-  }
-}
-
-function drawReactorCore(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const baseR = Math.min(W, H) * 0.12;
-  const t = state.time;
-
-  const power = state.powerOut / 100;
-  const heat = Math.min((state.temp - 300) / 400, 1);
-
-  let coreColor, glowColor;
-  if (state.meltdown) {
-    coreColor = 'rgba(255,30,0,0.9)';
-    glowColor = 'rgba(255,0,0,';
-  } else if (heat > 0.7) {
-    coreColor = 'rgba(255,100,0,0.85)';
-    glowColor = 'rgba(255,100,0,';
-  } else if (heat > 0.4) {
-    coreColor = 'rgba(255,200,0,0.85)';
-    glowColor = 'rgba(255,200,0,';
-  } else if (power > 0.1) {
-    coreColor = 'rgba(0,200,255,0.85)';
-    glowColor = 'rgba(0,200,255,';
-  } else {
-    coreColor = 'rgba(50,100,150,0.7)';
-    glowColor = 'rgba(50,100,150,';
-  }
-
-  const pulse = 1 + Math.sin(t * 0.05) * 0.04 * power;
-  const r = baseR * pulse;
-
-  // Outer glow rings
-  for (let i = 3; i >= 1; i--) {
-    const gr = r * (1 + i * 0.35);
-    const ga = (power * 0.15) / i;
-    if (ga < 0.005) continue;
-    const grad = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, gr);
-    grad.addColorStop(0, glowColor + ga + ')');
-    grad.addColorStop(1, glowColor + '0)');
-    ctx2d.beginPath();
-    ctx2d.arc(cx, cy, gr, 0, Math.PI * 2);
-    ctx2d.fillStyle = grad;
-    ctx2d.fill();
-  }
-
-  // Hexagonal reactor vessel
-  const sides = 6;
-  ctx2d.strokeStyle = 'rgba(0,229,255,0.5)';
-  ctx2d.lineWidth = 2;
-  ctx2d.fillStyle = 'rgba(5,20,35,0.9)';
-  ctx2d.beginPath();
-  for (let i = 0; i < sides; i++) {
-    const a = (i / sides) * Math.PI * 2 - Math.PI / 6;
-    const hx = cx + Math.cos(a) * r * 1.3;
-    const hy = cy + Math.sin(a) * r * 1.3;
-    if (i === 0) ctx2d.moveTo(hx, hy); else ctx2d.lineTo(hx, hy);
-  }
-  ctx2d.closePath();
-  ctx2d.fill();
-  ctx2d.stroke();
-
-  // Core gradient fill
-  const cGrad = ctx2d.createRadialGradient(cx, cy, 0, cx, cy, r);
-  cGrad.addColorStop(0, coreColor);
-  cGrad.addColorStop(0.6, coreColor.replace('0.9', '0.5').replace('0.85', '0.4'));
-  cGrad.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx2d.beginPath();
-  ctx2d.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx2d.fillStyle = cGrad;
-  ctx2d.fill();
-
-  // Fuel rod dots
-  const rodCount = 7;
-  for (let i = 0; i < rodCount; i++) {
-    for (let j = 0; j < rodCount; j++) {
-      const fx = cx - r * 0.55 + (i / (rodCount - 1)) * r * 1.1;
-      const fy = cy - r * 0.55 + (j / (rodCount - 1)) * r * 1.1;
-      const dist = Math.sqrt((fx - cx) ** 2 + (fy - cy) ** 2);
-      if (dist > r * 0.65) continue;
-
-      const fuelAlpha = 0.4 + power * 0.5;
-      ctx2d.beginPath();
-      ctx2d.arc(fx, fy, 2.5, 0, Math.PI * 2);
-      ctx2d.fillStyle = coreColor.replace('0.9', fuelAlpha.toFixed(2)).replace('0.85', fuelAlpha.toFixed(2));
-      ctx2d.fill();
-    }
-  }
-
-  // Center reactor label
-  ctx2d.fillStyle = 'rgba(0,229,255,0.8)';
-  ctx2d.font = `bold ${Math.round(r * 0.2)}px "Orbitron"`;
-  ctx2d.textAlign = 'center';
-  ctx2d.textBaseline = 'middle';
-  ctx2d.fillText('CORE', cx, cy);
-}
-
-function drawControlRods(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const baseR = Math.min(W, H) * 0.12;
-  const r = baseR * 1.3;
-  const insertion = state.rods / 100;
-  const numRods = 5;
-
-  for (let i = 0; i < numRods; i++) {
-    const a = (i / numRods) * Math.PI * 2;
-    const rx = cx + Math.cos(a) * r * 0.6;
-    const ry_base = cy - r * 1.1;
-    const ry_tip = cy - r * 0.1;
-    const currentY = ry_base + (ry_tip - ry_base) * insertion;
-
-    // Rod channel
-    ctx2d.strokeStyle = 'rgba(26,58,92,0.5)';
-    ctx2d.lineWidth = 4;
-    ctx2d.beginPath();
-    ctx2d.moveTo(rx, ry_base - 15);
-    ctx2d.lineTo(rx, ry_tip + 5);
-    ctx2d.stroke();
-
-    // Rod itself
-    const rodColor = insertion > 0.7 ? '#00e5ff' : insertion > 0.3 ? '#ffb300' : '#ff1744';
-    ctx2d.strokeStyle = rodColor;
-    ctx2d.lineWidth = 4;
-    ctx2d.beginPath();
-    ctx2d.moveTo(rx, ry_base - 15);
-    ctx2d.lineTo(rx, currentY);
-    ctx2d.stroke();
-
-    // Rod tip glow
-    ctx2d.beginPath();
-    ctx2d.arc(rx, currentY, 5, 0, Math.PI * 2);
-    ctx2d.fillStyle = rodColor;
-    ctx2d.fill();
-  }
-}
-
-function drawTurbine(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const ry = Math.min(H * 0.32, 140);
-  const tx = cx;
-  const ty = cy - ry - 80;
-
-  if (ty < 20) return;
-
-  // Turbine housing
-  ctx2d.strokeStyle = 'rgba(0,229,255,0.4)';
-  ctx2d.lineWidth = 2;
-  ctx2d.fillStyle = 'rgba(5,20,35,0.8)';
-  ctx2d.beginPath();
-  ctx2d.arc(tx, ty, 30, 0, Math.PI * 2);
-  ctx2d.fill();
-  ctx2d.stroke();
-
-  // Rotating blades
-  const bladeCount = 6;
-  const speed = state.powerOut / 100;
-  ctx2d.save();
-  ctx2d.translate(tx, ty);
-  ctx2d.rotate(state.turbineAngle);
-
-  for (let i = 0; i < bladeCount; i++) {
-    const a = (i / bladeCount) * Math.PI * 2;
-    ctx2d.strokeStyle = `rgba(0,229,255,${0.3 + speed * 0.6})`;
-    ctx2d.lineWidth = 3;
-    ctx2d.beginPath();
-    ctx2d.moveTo(0, 0);
-    ctx2d.lineTo(Math.cos(a) * 22, Math.sin(a) * 22);
-    ctx2d.stroke();
-  }
-
-  // Hub
-  ctx2d.fillStyle = speed > 0.1 ? '#00e5ff' : '#1a3a5c';
-  ctx2d.beginPath();
-  ctx2d.arc(0, 0, 5, 0, Math.PI * 2);
-  ctx2d.fill();
-
-  ctx2d.restore();
-
-  // Generator box
-  const gx = tx + 50;
-  ctx2d.fillStyle = 'rgba(5,20,40,0.9)';
-  ctx2d.strokeStyle = 'rgba(0,229,255,0.3)';
-  ctx2d.lineWidth = 1.5;
-  ctx2d.fillRect(gx, ty - 18, 40, 36);
-  ctx2d.strokeRect(gx, ty - 18, 40, 36);
-
-  ctx2d.fillStyle = 'rgba(0,229,255,0.7)';
-  ctx2d.font = '8px "Share Tech Mono"';
-  ctx2d.textAlign = 'center';
-  ctx2d.textBaseline = 'middle';
-  ctx2d.fillText('GEN', gx + 20, ty);
-}
-
-function drawLabels(W, H) {
-  const cx = W * 0.5, cy = H * 0.5;
-  const rx = Math.min(W * 0.3, 170);
-  const ry = Math.min(H * 0.32, 140);
-
-  ctx2d.font = '9px "Share Tech Mono"';
-  ctx2d.fillStyle = 'rgba(106,143,168,0.8)';
-  ctx2d.textAlign = 'center';
-  ctx2d.textBaseline = 'middle';
-
-  ctx2d.fillText('STEAM GENERATOR', cx + rx + 60, cy);
-  ctx2d.fillText('COOLANT LOOP', cx + rx * 0.6, cy + ry + 20);
-  ctx2d.fillText('CONTROL RODS', cx - rx * 0.5, cy - ry * 0.8);
-}
-
-// ==================== PHYSICS UPDATE ====================
 function updatePhysics() {
   if (state.scramActive) {
     state.power = 0;
@@ -1737,6 +2047,82 @@ function updateClock() {
   document.getElementById('clock').textContent = h + ':' + m + ':' + s;
 }
 
+// ==================== JSON SCENARIO RUNNER ====================
+const PRESETS = {
+  cold:     { coreTemp: 5,  powerLevel: 0,  rodPosition: 100 },
+  low:      { coreTemp: 28, powerLevel: 20, rodPosition: 75  },
+  nominal:  { coreTemp: 58, powerLevel: 60, rodPosition: 40  },
+  high:     { coreTemp: 82, powerLevel: 88, rodPosition: 15  },
+  critical: { coreTemp: 97, powerLevel: 99, rodPosition: 3   }
+};
+
+function applyReactorJSON(data) {
+  const coreTemp   = Math.max(0, Math.min(100, Number(data.coreTemp   ?? data.temp        ?? data.temperature)));
+  const powerLevel = Math.max(0, Math.min(100, Number(data.powerLevel ?? data.power       ?? data.powerOutput)));
+  const rodPos     = Math.max(0, Math.min(100, Number(data.rodPosition ?? data.rods       ?? data.controlRods)));
+
+  if ([coreTemp, powerLevel, rodPos].some(isNaN)) throw new Error('Values must be numbers 0–100');
+
+  // Map 0-100 scale onto simulator internals
+  // coreTemp 0-100 → actual °C 60–750
+  state.temp     = 60 + coreTemp * 6.9;
+  // powerLevel directly maps to state.power and powerOut
+  state.power    = powerLevel;
+  state.powerOut = powerLevel;
+  state.scramActive = powerLevel === 0;
+
+  // rodPosition: 0 = fully withdrawn, 100 = fully inserted
+  state.rods = rodPos;
+
+  // Sync sliders & labels
+  document.getElementById('powerSlider').value = powerLevel;
+  document.getElementById('rodsSlider').value  = rodPos;
+  document.getElementById('powerVal').textContent = powerLevel + '%';
+  document.getElementById('rodsVal').textContent  = rodPos + '% ' + (rodPos > 50 ? 'INSERTED' : 'WITHDRAWN');
+  document.getElementById('coolantSlider').value  = Math.max(30, 100 - powerLevel * 0.3);
+  document.getElementById('coolantVal').textContent = Math.round(Math.max(30, 100 - powerLevel * 0.3)) + '%';
+}
+
+function runJSON() {
+  const raw = document.getElementById('scenarioJSON').value.trim();
+  const status = document.getElementById('spStatus');
+  if (!raw) { setStatus('NO INPUT — PASTE JSON FIRST', 'err'); return; }
+  try {
+    const data = JSON.parse(raw);
+    applyReactorJSON(data);
+    setStatus('SCENARIO APPLIED — ' + new Date().toLocaleTimeString(), 'ok');
+  } catch(e) {
+    setStatus('ERROR: ' + e.message.toUpperCase(), 'err');
+  }
+}
+
+function clearJSON() {
+  document.getElementById('scenarioJSON').value = '';
+  setStatus('AWAITING INPUT', '');
+}
+
+function loadPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+  document.getElementById('scenarioJSON').value = JSON.stringify(p, null, 2);
+  applyReactorJSON(p);
+  setStatus('PRESET LOADED: ' + name.toUpperCase(), 'ok');
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('spStatus');
+  el.textContent = msg;
+  el.className = 'sp-status ' + (cls || '');
+}
+
+function toggleScenarioPanel() {
+  const panel = document.getElementById('scenarioPanel');
+  const btn   = document.getElementById('toggleScenarioBtn');
+  const open  = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  btn.innerHTML = open ? 'JSON CTRL &#9660;' : 'JSON CTRL &#9650;';
+}
+
 // ==================== MAIN LOOP ====================
 function loop() {
   state.time++;
@@ -1750,11 +2136,10 @@ function loop() {
 // Init on first interaction to unlock audio
 document.body.addEventListener('click', () => { if (!audioCtx) initAudio(); }, { once: false });
 
-// Start
 setTimeout(() => {
-  resizeCanvas();
+  initParticles();
   loop();
-}, 200);
+}, 300);
 </script>
 </body>
 </html>
